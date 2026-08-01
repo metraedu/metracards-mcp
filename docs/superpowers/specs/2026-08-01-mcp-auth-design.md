@@ -79,7 +79,7 @@ Agent / Cursor
 Authorization: Bearer <Firebase ID token>
 ```
 
-- Token: Firebase Auth ID JWT (RS256), project `metracards-e4003`.
+- Token: Firebase Auth ID JWT (RS256); audience/issuer for `FIREBASE_PROJECT_ID`.
 - API verifies via JWKS; identity = `user_id` / `sub`.
 - Upsert: `POST /users` with JSON `{ "display_name": string | null, "photo_url": string | null }`.
 - Refresh: `POST https://securetoken.googleapis.com/v1/token?key=<FIREBASE_API_KEY>` with `grant_type=refresh_token` and `refresh_token`.
