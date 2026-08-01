@@ -15,8 +15,25 @@ Current tools:
 | `decks_create` | `POST /decks` (auth) |
 | `decks_update` | `PUT /decks/{id}` (auth) |
 | `decks_delete` | `DELETE /decks/{id}` (auth) |
+| `cards_list` | `GET /flashcards` (auth; optional `deck_id`, `since`) |
+| `cards_get` | `GET /flashcards/{id}` (auth) |
+| `cards_create` | `POST /flashcards` (auth) |
+| `cards_update` | `PUT /flashcards/{id}` (auth) |
+| `cards_delete` | `DELETE /flashcards/{id}` (auth) |
+| `cards_upload_media` | Presign + S3 PUT from absolute local `file_path` |
+| `cards_generate_audio` | `POST /audio` → upload TTS to S3 |
 
-There is no Cursor **Authenticate** button for this server (stdio). Auth is the `auth_login` tool under **View tools**, or ask the agent to call it. Deck tools require a prior `auth_login`.
+There is no Cursor **Authenticate** button for this server (stdio). Auth is the `auth_login` tool under **View tools**, or ask the agent to call it. Deck and card tools require a prior `auth_login`.
+
+## Create a card with images
+
+1. `auth_login`
+2. Choose/create a deck (`decks_list` / `decks_create`)
+3. Generate a flashcard UUID
+4. `cards_upload_media` with absolute `file_path`, `side`, `kind: "image"`
+5. `cards_create` with the same `id`, `deck_id`, `front`, `back`, and `image_file_url` / `image_file_size` (and back fields if needed)
+
+For TTS: `cards_generate_audio` then pass `audio_file_url` / `audio_file_size` (or back equivalents) into create/update.
 
 ## Prerequisites
 

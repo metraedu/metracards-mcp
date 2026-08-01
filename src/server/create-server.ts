@@ -4,6 +4,7 @@ import { TokenProvider } from '../auth/token-provider.js';
 import { MetraCardsApiClient } from '../clients/metracards-api.js';
 import { config } from '../config/index.js';
 import { registerAuthTools } from '../tools/auth.js';
+import { registerCardsTools } from '../tools/cards.js';
 import { registerDecksTools } from '../tools/decks.js';
 import { registerHealthCheck } from '../tools/health-check.js';
 
@@ -31,6 +32,7 @@ export function createServer(
     client: apiClient,
   });
   registerDecksTools(server, apiClient);
+  registerCardsTools(server, apiClient, { store });
 
   return server;
 }

@@ -24,6 +24,61 @@ export type UpdateDeckBody = {
   daily_new_cards_limit?: number;
 };
 
+export type CreateFlashcardBody = {
+  id?: string;
+  deck_id: string;
+  front: string;
+  back: string;
+  category?: string | null;
+  audio_file_url?: string | null;
+  image_file_url?: string | null;
+  back_audio_file_url?: string | null;
+  back_image_file_url?: string | null;
+  audio_file_size?: number;
+  image_file_size?: number;
+  back_audio_file_size?: number;
+  back_image_file_size?: number;
+};
+
+export type UpdateFlashcardBody = {
+  front?: string;
+  back?: string;
+  category?: string | null;
+  audio_file_url?: string | null;
+  image_file_url?: string | null;
+  back_audio_file_url?: string | null;
+  back_image_file_url?: string | null;
+  audio_file_size?: number;
+  image_file_size?: number;
+  back_audio_file_size?: number;
+  back_image_file_size?: number;
+  next_review?: string;
+  last_review?: string | null;
+  mastery_level?: number;
+  consecutive_correct?: number;
+  ease_factor?: number;
+  total_reviews?: number;
+  total_correct?: number;
+  average_quality?: number;
+  version?: number;
+};
+
+export type CreatePresignedUrlBody = {
+  action: 'putObject' | 'getObject';
+  key: string;
+  contentType?: string;
+};
+
+export type GenerateAudioInput = {
+  text: string;
+  language: string;
+};
+
+export type GenerateAudioResult = {
+  audioBase64: string;
+  language: string;
+};
+
 export type TokenProviderLike = {
   getIdToken(): Promise<string>;
   clearCache(): void;
@@ -181,6 +236,146 @@ export class MetraCardsApiClient {
       { auth: true },
     );
     return this.readJsonOrThrow(response, 'delete deck');
+  }
+
+  async listFlashcards(opts?: {
+    deck_id?: string;
+    since?: string;
+  }): Promise<unknown> {
+    const params = new URLSearchParams();
+    if (opts?.deck_id) {
+      params.set('deck_id', opts.deck_id);
+    }
+    if (opts?.since) {
+      params.set('since', opts.since);
+    }
+    const query = params.toString();
+    const response = await this.request(
+      `/flashcards${query ? `?${query}` : ''}`,
+      { method: 'GET', headers: { Accept: 'application/json' } },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'list flashcards');
+  }
+
+  async getFlashcard(id: string): Promise<unknown> {
+    const response = await this.request(
+      `/flashcards/${encodeURIComponent(id)}`,
+      { method: 'GET', headers: { Accept: 'application/json' } },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'get flashcard');
+  }
+
+  async createFlashcard(body: CreateFlashcardBody): Promise<unknown> {
+    const response = await this.request(
+      '/flashcards',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'create flashcard');
+  }
+
+  async updateFlashcard(
+    id: string,
+    body: UpdateFlashcardBody,
+  ): Promise<unknown> {
+    const response = await this.request(
+      `/flashcards/${encodeURIComponent(id)}`,
+      {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'update flashcard');
+  }
+
+  async deleteFlashcard(id: string): Promise<unknown> {
+    const response = await this.request(
+      `/flashcards/${encodeURIComponent(id)}`,
+      { method: 'DELETE', headers: { Accept: 'application/json' } },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'delete flashcard');
+  }
+
+  async createPresignedUrl(
+    body: CreatePresignedUrlBody,
+  ): Promise<{ url: string; expiresIn: number }> {
+    const response = await this.request(
+      '/s3/presigned-url',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+      { auth: true },
+    );
+    const parsed = (await this.readJsonOrThrow(
+      response,
+      'create presigned url',
+    )) as { url?: unknown; expiresIn?: unknown };
+    if (typeof parsed.url !== 'string' || typeof parsed.expiresIn !== 'number') {
+      throw new MetraCardsApiError(
+        'MetraCards API create presigned url returned invalid payload',
+      );
+    }
+    return { url: parsed.url, expiresIn: parsed.expiresIn };
+  }
+
+  async generateAudio(
+    input: GenerateAudioInput,
+  ): Promise<GenerateAudioResult> {
+    const response = await this.request(
+      '/audio',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: input.text, lang: input.language }),
+      },
+      { auth: true },
+    );
+    const parsed = (await this.readJsonOrThrow(
+      response,
+      'generate audio',
+    )) as {
+      audio?: unknown;
+      language?: unknown;
+      data?: { audio?: unknown; language?: unknown };
+    };
+    const audioBase64 =
+      (typeof parsed.audio === 'string' ? parsed.audio : undefined) ??
+      (typeof parsed.data?.audio === 'string' ? parsed.data.audio : undefined);
+    if (!audioBase64) {
+      throw new MetraCardsApiError(
+        'MetraCards API generate audio response missing audio',
+      );
+    }
+    const language =
+      (typeof parsed.language === 'string' ? parsed.language : undefined) ??
+      (typeof parsed.data?.language === 'string'
+        ? parsed.data.language
+        : undefined) ??
+      input.language;
+    return { audioBase64, language };
   }
 
   private async readJsonOrThrow(
