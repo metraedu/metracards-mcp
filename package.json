@@ -8,7 +8,7 @@
     "metracards-mcp": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && mkdir -p dist/auth && cp src/auth/login-page.html dist/auth/login-page.html",
     "start": "node dist/index.js",
     "start:stdio": "node dist/index.js",
     "start:http": "node dist/http.js",
