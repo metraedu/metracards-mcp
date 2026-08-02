@@ -1,0 +1,20 @@
+{
+  "metracards-mcp:env": { "account": "111111111111", "region": "us-east-1" },
+  "metracards-mcp:domain": {
+    "domainName": "mcp.metraedu.com.br",
+    "certificateArn": "arn:aws:acm:us-east-1:111111111111:certificate/00000000-0000-0000-0000-000000000000",
+    "route53": {
+      "hostedZoneId": "Z0000000000000000000",
+      "hostedZoneName": "metraedu.com.br"
+    }
+  },
+  "metracards-mcp:firebase": {
+    "apiKey": "placeholder-api-key",
+    "authDomain": "placeholder.firebaseapp.com",
+    "projectId": "placeholder-project",
+    "storageBucket": "placeholder.appspot.com",
+    "messagingSenderId": "000000000000",
+    "appId": "1:000000000000:web:0000000000000000000000"
+  },
+  "metracards-mcp:apiUrl": "https://api.example.invalid"
+}

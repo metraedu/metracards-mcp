@@ -75,6 +75,7 @@ export function createDynamoOAuthStore(
         new GetCommand({
           TableName: deps.tableName,
           Key: { pk: `CLIENT#${clientId}`, sk: 'META' },
+          ConsistentRead: true,
         }),
       );
       const item = getItem(result);

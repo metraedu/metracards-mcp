@@ -4,6 +4,7 @@ import * as apigwv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53targets from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
@@ -54,13 +55,19 @@ export class McpStack extends cdk.Stack {
       `arn:aws:lambda:${this.region}:753240598075:layer:LambdaAdapterLayerX86:${LAMBDA_WEB_ADAPTER_LAYER_VERSION}`,
     );
 
+    const logGroup = new logs.LogGroup(this, 'McpServerFunctionLogGroup', {
+      retention: logs.RetentionDays.TWO_WEEKS,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     const fn = new lambda.Function(this, 'McpServerFunction', {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       code: createMcpFunctionCode(),
       handler: 'run.sh',
       layers: [webAdapterLayer],
       timeout: cdk.Duration.seconds(120),
       memorySize: 1024,
+      logGroup,
       environment: {
         AWS_LAMBDA_EXEC_WRAPPER: '/opt/bootstrap',
         AWS_LWA_PORT: '3000',

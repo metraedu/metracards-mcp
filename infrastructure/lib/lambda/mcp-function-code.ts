@@ -1,6 +1,7 @@
 import { copyFileSync, chmodSync, mkdirSync } from 'node:fs';
 import * as path from 'node:path';
 import { buildSync } from 'esbuild';
+import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
@@ -25,7 +26,7 @@ function bundleMcpServer(outputDir: string): void {
     outfile: path.join(outputDir, 'index.mjs'),
     bundle: true,
     platform: 'node',
-    target: 'node20',
+    target: 'node22',
     format: 'esm',
     sourcemap: false,
     banner: { js: REQUIRE_SHIM_BANNER },
@@ -41,8 +42,9 @@ function bundleMcpServer(outputDir: string): void {
 export function createMcpFunctionCode(): lambda.Code {
   return lambda.Code.fromAsset(SRC_DIR, {
     exclude: ['**/*.test.ts'],
+    assetHashType: cdk.AssetHashType.OUTPUT,
     bundling: {
-      image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+      image: lambda.Runtime.NODEJS_22_X.bundlingImage,
       local: {
         tryBundle(outputDir: string): boolean {
           bundleMcpServer(outputDir);

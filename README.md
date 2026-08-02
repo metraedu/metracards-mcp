@@ -61,8 +61,9 @@ The process loads `.env` from this package root.
 |--------|-------------|
 | `npm run build` | Compile TypeScript to `dist/` (+ copy OAuth login page) |
 | `npm start` / `npm run start:http` | Run Streamable HTTP on `/mcp` |
-| `npm test` | Unit tests |
+| `npm test` | Unit tests (does **not** run infra tests) |
 | `npm run test:infra` | CDK snapshot assertions |
+| `npm run test:all` | Unit tests + CDK snapshot assertions (CI entrypoint) |
 | `npm run synth` | Synthesize CloudFormation (`cdk synth`) |
 | `npm run deploy` | Deploy stack (`cdk deploy`) |
 
@@ -96,11 +97,11 @@ OAuth state (DCR clients, auth codes, pending authorize) uses an in-memory store
 
 ## AWS deployment
 
-Production: **Lambda** (Node 20 + Lambda Web Adapter) behind **API Gateway HTTP API** with custom domain **`mcp.metraedu.com.br`**, **DynamoDB** for durable OAuth state, and Route53 alias + ACM TLS. CDK lives under `infrastructure/`.
+Production: **Lambda** (Node 22 + Lambda Web Adapter) behind **API Gateway HTTP API** with custom domain **`mcp.metraedu.com.br`**, **DynamoDB** for durable OAuth state, and Route53 alias + ACM TLS. CDK lives under `infrastructure/` and requires TypeScript 5.9+ (already pinned in `devDependencies`).
 
 ### CDK context
 
-Set real values in `cdk.json` (or pass `-c` flags). Shape:
+Context lives in the **repo-root `cdk.json`** (not `infrastructure/cdk.json`, which is unused). The committed `cdk.json` only has placeholder values so `npm run synth` works out of the box for anyone who clones the repo. Shape:
 
 ```json
 {
@@ -132,12 +133,29 @@ Set real values in `cdk.json` (or pass `-c` flags). Shape:
 | `metracards-mcp:firebase` | Firebase web config (same values as metracards-web) |
 | `metracards-mcp:apiUrl` | MetraCards API base URL (no trailing slash) |
 
-### Synth and deploy
+**Real values for an actual deploy do not belong in `cdk.json`.** CDK automatically loads a `cdk.context.json` next to `cdk.json` (repo root) and merges it over the base context, and `cdk.context.json` is gitignored — put real account/domain/Firebase/API values there. `cdk.context.example.json` documents the shape with placeholders; copy it to get started:
+
+```bash
+cp cdk.context.example.json cdk.context.json
+# edit cdk.context.json with real values
+```
+
+Note: **nested `-c` flags do not work for these object-shaped context keys.** `cdk` passes `-c` values as plain strings, so e.g. `-c metracards-mcp:domain.domainName=...` will not merge into the `metracards-mcp:domain` object the way `loadMcpConfig` expects — use `cdk.context.json` instead.
+
+### Bootstrap and deploy
+
+The target AWS account/region needs to be [bootstrapped](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) once before the first deploy:
+
+```bash
+npx cdk bootstrap aws://ACCOUNT_ID/REGION
+```
+
+Then synth/deploy:
 
 ```bash
 npm install
 npm run build
-npm run synth          # validate template
+npm run synth          # validate template (uses cdk.context.json if present, else placeholders)
 npx cdk deploy         # or: npm run deploy
 ```
 

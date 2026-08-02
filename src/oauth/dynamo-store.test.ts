@@ -116,6 +116,7 @@ describe('createDynamoOAuthStore', () => {
       sk: 'META',
       client: sampleClient,
     });
+    assert.equal(fake.getCommands[0]?.input.ConsistentRead, true);
   });
 
   it('saves and consumes an authorization code once', async () => {
