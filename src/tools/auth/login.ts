@@ -1,34 +1,15 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { CredentialStore } from '../auth/credential-store.js';
-import type { TokenProvider } from '../auth/token-provider.js';
-import { AuthRequiredError } from '../auth/token-provider.js';
-import { runBrowserLogin } from '../auth/browser-login.js';
-import type { AuthProvider, FirebaseConfig } from '../auth/types.js';
-import type { MetraCardsApiClient } from '../clients/metracards-api.js';
-import { MetraCardsApiError } from '../clients/metracards-api.js';
+import { runBrowserLogin } from '../../auth/browser-login.js';
+import type { AuthProvider } from '../../auth/types.js';
+import { MetraCardsApiError } from '../../clients/metracards-api.js';
+import { textResult } from '../shared.js';
+import type { AuthToolDeps } from './deps.js';
 
-export type AuthToolDeps = {
-  firebase: FirebaseConfig | null;
-  store: CredentialStore;
-  tokenProvider: TokenProvider;
-  client: MetraCardsApiClient;
-  runLogin?: typeof runBrowserLogin;
-};
-
-function textResult(payload: unknown, isError = false) {
-  return {
-    isError,
-    content: [
-      {
-        type: 'text' as const,
-        text: JSON.stringify(payload, null, 2),
-      },
-    ],
-  };
-}
-
-export function registerAuthTools(server: McpServer, deps: AuthToolDeps): void {
+export function registerAuthLogin(
+  server: McpServer,
+  deps: AuthToolDeps,
+): void {
   const runLogin = deps.runLogin ?? runBrowserLogin;
 
   server.registerTool(
@@ -41,6 +22,17 @@ export function registerAuthTools(server: McpServer, deps: AuthToolDeps): void {
       }),
     },
     async ({ provider }) => {
+      if (!deps.tokenProvider.canPersistCredentials) {
+        return textResult(
+          {
+            ok: false,
+            error:
+              'Browser login is not available over HTTP. Use OAuth Connect or authenticate with Authorization: Bearer <Firebase ID token>.',
+          },
+          true,
+        );
+      }
+
       if (!deps.firebase) {
         return textResult(
           {
@@ -67,7 +59,7 @@ export function registerAuthTools(server: McpServer, deps: AuthToolDeps): void {
           provider: login.provider,
           updatedAt: new Date().toISOString(),
         });
-        deps.tokenProvider.seedCache(login.idToken);
+        deps.tokenProvider.seedCache?.(login.idToken);
 
         let upsert: { ok: true } | { ok: false; message: string };
         try {
@@ -98,49 +90,6 @@ export function registerAuthTools(server: McpServer, deps: AuthToolDeps): void {
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         return textResult({ ok: false, error: message }, true);
-      }
-    },
-  );
-
-  server.registerTool(
-    'auth_logout',
-    {
-      description: 'Clear locally stored MetraCards MCP credentials',
-      inputSchema: z.object({}),
-    },
-    async () => {
-      await deps.store.clear();
-      deps.tokenProvider.clearCache();
-      return textResult({ ok: true, authenticated: false });
-    },
-  );
-
-  server.registerTool(
-    'auth_status',
-    {
-      description: 'Show whether MetraCards MCP has stored user credentials',
-      inputSchema: z.object({}),
-    },
-    async () => {
-      try {
-        const profile = await deps.tokenProvider.getStoredProfile();
-        if (!profile) {
-          return textResult({ authenticated: false });
-        }
-        return textResult({
-          authenticated: true,
-          uid: profile.uid,
-          email: profile.email,
-          displayName: profile.displayName,
-          provider: profile.provider,
-          updatedAt: profile.updatedAt,
-        });
-      } catch (err) {
-        if (err instanceof AuthRequiredError) {
-          return textResult({ authenticated: false });
-        }
-        const message = err instanceof Error ? err.message : String(err);
-        return textResult({ authenticated: false, error: message }, true);
       }
     },
   );

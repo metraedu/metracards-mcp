@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Authorize MetraCards MCP</title>
+    <style>
+      :root { color-scheme: light; font-family: ui-sans-serif, system-ui, sans-serif; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f6f7f9; color: #111; }
+      main { width: min(360px, calc(100vw - 32px)); padding: 24px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; }
+      h1 { margin: 0 0 8px; font-size: 1.25rem; }
+      p { margin: 0 0 20px; color: #4b5563; font-size: .95rem; }
+      button { width: 100%; margin: 0 0 12px; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 8px; background: #111; color: #fff; font-size: .95rem; cursor: pointer; }
+      button.secondary { background: #fff; color: #111; }
+      button:disabled { opacity: .6; cursor: wait; }
+      #status { min-height: 1.25rem; font-size: .9rem; color: #4b5563; }
+      #status.error { color: #b91c1c; }
+      #status.ok { color: #047857; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MetraCards MCP</h1>
+      <p>Sign in to authorize this MCP client.</p>
+      <button id="google" type="button">Continue with Google</button>
+      <button id="apple" class="secondary" type="button">Continue with Apple</button>
+      <div id="status">Preparing…</div>
+    </main>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
+    <script>
+      const firebaseConfig = __FIREBASE_CONFIG__;
+      const state = __STATE__;
+      const preferredProvider = __PROVIDER__;
+      const statusEl = document.getElementById('status');
+      const googleBtn = document.getElementById('google');
+      const appleBtn = document.getElementById('apple');
+
+      function setStatus(message, kind) {
+        statusEl.textContent = message;
+        statusEl.className = kind || '';
+      }
+
+      function setBusy(busy) {
+        googleBtn.disabled = busy;
+        appleBtn.disabled = busy;
+      }
+
+      async function postCallback(payload) {
+        const response = await fetch('/authorize/callback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || 'Authorization callback failed');
+        }
+        return response.json();
+      }
+
+      async function signIn(providerName) {
+        setBusy(true);
+        setStatus('Waiting for provider…');
+        try {
+          const provider = providerName === 'apple'
+            ? new firebase.auth.OAuthProvider('apple.com')
+            : new firebase.auth.GoogleAuthProvider();
+          if (providerName === 'apple') {
+            provider.addScope('email');
+            provider.addScope('name');
+          }
+          const result = await firebase.auth().signInWithPopup(provider);
+          const user = result.user;
+          if (!user) throw new Error('No user returned from Firebase');
+          const callback = await postCallback({
+            state,
+            provider: providerName,
+            idToken: await user.getIdToken(),
+            refreshToken: user.refreshToken,
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+          });
+          window.location = callback.redirect_to;
+        } catch (err) {
+          setStatus(err && err.message ? err.message : String(err), 'error');
+          setBusy(false);
+        }
+      }
+
+      try {
+        firebase.initializeApp(firebaseConfig);
+        setStatus('Choose a provider to continue.');
+        googleBtn.addEventListener('click', () => signIn('google'));
+        appleBtn.addEventListener('click', () => signIn('apple'));
+        if (preferredProvider === 'google' || preferredProvider === 'apple') signIn(preferredProvider);
+      } catch (err) {
+        setStatus(err && err.message ? err.message : String(err), 'error');
+      }
+    </script>
+  </body>
+</html>

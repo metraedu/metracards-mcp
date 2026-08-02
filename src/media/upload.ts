@@ -22,20 +22,28 @@ export class MediaUploadError extends Error {
   }
 }
 
-export function buildFlashcardMediaKey(input: {
-  uid: string;
-  flashcardId: string;
-  side: MediaSide;
-  kind: MediaKind;
-  extension: string;
-  nowMs?: number;
-}): string {
-  const ts = input.nowMs ?? Date.now();
-  const ext = input.extension.replace(/^\./, '').toLowerCase() || 'bin';
-  return `users/${input.uid}/flashcards/${input.flashcardId}/${input.side}-${input.kind}-${ts}.${ext}`;
+export function decodeContentBase64(value: string): Buffer {
+  const trimmed = value.trim();
+  const comma = trimmed.indexOf(',');
+  const raw =
+    trimmed.startsWith('data:') && comma >= 0
+      ? trimmed.slice(comma + 1)
+      : trimmed;
+  return Buffer.from(raw, 'base64');
 }
 
-function guessContentType(kind: MediaKind, extension: string): string {
+export function assertMediaByteLength(
+  buffer: Buffer,
+  maxBytes: number,
+): void {
+  if (buffer.byteLength > maxBytes) {
+    throw new MediaUploadError(
+      `Decoded media exceeds max size of ${maxBytes} bytes (got ${buffer.byteLength})`,
+    );
+  }
+}
+
+export function guessContentType(kind: MediaKind, extension: string): string {
   const ext = extension.toLowerCase();
   if (kind === 'image') {
     if (ext === 'jpg' || ext === 'jpeg') {
@@ -56,6 +64,19 @@ function guessContentType(kind: MediaKind, extension: string): string {
     return 'audio/ogg';
   }
   return 'audio/mpeg';
+}
+
+export function buildFlashcardMediaKey(input: {
+  uid: string;
+  flashcardId: string;
+  side: MediaSide;
+  kind: MediaKind;
+  extension: string;
+  nowMs?: number;
+}): string {
+  const ts = input.nowMs ?? Date.now();
+  const ext = input.extension.replace(/^\./, '').toLowerCase() || 'bin';
+  return `users/${input.uid}/flashcards/${input.flashcardId}/${input.side}-${input.kind}-${ts}.${ext}`;
 }
 
 export async function uploadMediaBuffer(input: {

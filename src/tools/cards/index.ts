@@ -1,0 +1,26 @@
+import type { McpServer } from '@modelcontextprotocol/server';
+import type { MetraCardsApiClient } from '../../clients/metracards-api.js';
+import { registerCardsCreate } from './create.js';
+import { registerCardsDelete } from './delete.js';
+import type { CardsToolDeps } from './deps.js';
+import { registerCardsGenerateAudio } from './generate-audio.js';
+import { registerCardsGet } from './get.js';
+import { registerCardsList } from './list.js';
+import { registerCardsUpdate } from './update.js';
+import { registerCardsUploadMedia } from './upload-media.js';
+
+export type { CardsToolDeps } from './deps.js';
+
+export function registerCardsTools(
+  server: McpServer,
+  client: MetraCardsApiClient,
+  deps: CardsToolDeps,
+): void {
+  registerCardsList(server, client);
+  registerCardsGet(server, client);
+  registerCardsCreate(server, client);
+  registerCardsUpdate(server, client);
+  registerCardsDelete(server, client);
+  registerCardsUploadMedia(server, client, deps);
+  registerCardsGenerateAudio(server, client, deps);
+}
