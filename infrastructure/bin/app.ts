@@ -12,7 +12,8 @@ cdk.Tags.of(app).add('ManagedBy', 'cdk');
 
 new McpStack(app, 'MetraCardsMcpStack', {
   env: config.env,
-  description: 'OAuth storage for the MetraCards MCP server',
+  description: 'MetraCards MCP server (Lambda + HTTP API + custom domain)',
+  config,
 });
 
 app.synth();
