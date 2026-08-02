@@ -14,10 +14,24 @@ import type {
 
 type Item = Record<string, unknown> & { pk: string; sk: string };
 
-function createFakeDocClient() {
+function createFakeDocClient(options?: { coordinateReads?: boolean }) {
   const items = new Map<string, Item>();
   const getCommands: GetCommand[] = [];
   const keyOf = (pk: string, sk: string) => `${pk}|${sk}`;
+  const pendingReads: (() => void)[] = [];
+
+  const waitForConcurrentRead = async () => {
+    if (options?.coordinateReads !== true) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      pendingReads.push(resolve);
+      if (pendingReads.length === 2) {
+        pendingReads.forEach((release) => release());
+      }
+    });
+  };
 
   return {
     items,
@@ -33,12 +47,22 @@ function createFakeDocClient() {
         if (command instanceof GetCommand) {
           getCommands.push(command);
           const key = command.input.Key as { pk: string; sk: string };
+          await waitForConcurrentRead();
           return { Item: items.get(keyOf(key.pk, key.sk)) };
         }
 
         if (command instanceof DeleteCommand) {
           const key = command.input.Key as { pk: string; sk: string };
-          items.delete(keyOf(key.pk, key.sk));
+          const itemKey = keyOf(key.pk, key.sk);
+          if (
+            command.input.ConditionExpression === 'attribute_exists(pk)' &&
+            !items.has(itemKey)
+          ) {
+            const error = new Error('Conditional check failed');
+            error.name = 'ConditionalCheckFailedException';
+            throw error;
+          }
+          items.delete(itemKey);
           return {};
         }
 
@@ -114,6 +138,31 @@ describe('createDynamoOAuthStore', () => {
     assert.equal(fake.items.has('CODE#code-1|META'), false);
     assert.equal(fake.getCommands[0]?.input.ConsistentRead, true);
     now = 2_000;
+  });
+
+  it('allows only one concurrent authorization code consumer to redeem a code', async () => {
+    const fake = createFakeDocClient({ coordinateReads: true });
+    const store = createDynamoOAuthStore({
+      tableName: 'oauth',
+      docClient: fake.docClient,
+      now: () => 1_000,
+    });
+
+    await store.saveAuthCode('code-race', sampleCode);
+
+    const results = await Promise.all([
+      store.consumeAuthCode('code-race'),
+      store.consumeAuthCode('code-race'),
+    ]);
+
+    assert.deepEqual(
+      results.filter((result) => result !== undefined),
+      [{ ...sampleCode, expiresAtMs: 121_000 }],
+    );
+    assert.equal(
+      results.filter((result) => result === undefined).length,
+      1,
+    );
   });
 
   it('deletes expired authorization codes and returns undefined', async () => {

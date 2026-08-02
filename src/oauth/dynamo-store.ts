@@ -44,6 +44,12 @@ function getPendingAuthorizeRequest(item: DynamoItem): PendingAuthorizeRequest {
   return record as PendingAuthorizeRequest;
 }
 
+function isConditionalCheckFailed(error: unknown): boolean {
+  return (
+    error instanceof Error && error.name === 'ConditionalCheckFailedException'
+  );
+}
+
 export function createDynamoOAuthStore(
   deps: DynamoOAuthStoreDeps,
 ): OAuthStore {
@@ -102,12 +108,20 @@ export function createDynamoOAuthStore(
       if (item === undefined) {
         return undefined;
       }
-      await deps.docClient.send(
-        new DeleteCommand({
-          TableName: deps.tableName,
-          Key: key,
-        }),
-      );
+      try {
+        await deps.docClient.send(
+          new DeleteCommand({
+            TableName: deps.tableName,
+            Key: key,
+            ConditionExpression: 'attribute_exists(pk)',
+          }),
+        );
+      } catch (error) {
+        if (isConditionalCheckFailed(error)) {
+          return undefined;
+        }
+        throw error;
+      }
       if ((item.expiresAt ?? 0) * 1000 <= now()) {
         return undefined;
       }
@@ -140,12 +154,20 @@ export function createDynamoOAuthStore(
       if (item === undefined) {
         return undefined;
       }
-      await deps.docClient.send(
-        new DeleteCommand({
-          TableName: deps.tableName,
-          Key: key,
-        }),
-      );
+      try {
+        await deps.docClient.send(
+          new DeleteCommand({
+            TableName: deps.tableName,
+            Key: key,
+            ConditionExpression: 'attribute_exists(pk)',
+          }),
+        );
+      } catch (error) {
+        if (isConditionalCheckFailed(error)) {
+          return undefined;
+        }
+        throw error;
+      }
       if ((item.expiresAt ?? 0) * 1000 <= now()) {
         return undefined;
       }
