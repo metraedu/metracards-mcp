@@ -62,6 +62,9 @@ The process loads `.env` from this package root.
 | `npm run build` | Compile TypeScript to `dist/` (+ copy OAuth login page) |
 | `npm start` / `npm run start:http` | Run Streamable HTTP on `/mcp` |
 | `npm test` | Unit tests |
+| `npm run test:infra` | CDK snapshot assertions |
+| `npm run synth` | Synthesize CloudFormation (`cdk synth`) |
+| `npm run deploy` | Deploy stack (`cdk deploy`) |
 
 ## OAuth Connect
 
@@ -76,7 +79,7 @@ OAuth-capable MCP clients such as ChatGPT Connect discover Protected Resource Me
 
 Manual HTTP clients can supply a Firebase ID token directly as a Bearer token.
 
-The OAuth client and authorization-code store is in memory. It is lost on restart and is not safe behind a multi-instance load balancer; use a shared durable store before deploying multiple instances.
+OAuth state (DCR clients, auth codes, pending authorize) uses an in-memory store locally and DynamoDB in production (see [AWS deployment](#aws-deployment)).
 
 ### HTTP env
 
@@ -89,6 +92,74 @@ The OAuth client and authorization-code store is in memory. It is lost on restar
 | `METRACARDS_MCP_AUTH_SERVERS` | issuer URL | PRM `authorization_servers` override |
 | `METRACARDS_MCP_ALLOWED_HOSTS` | host of resource URL | `Host` allowlist |
 | `METRACARDS_MCP_MAX_MEDIA_BYTES` | `10485760` | Max decoded `content_base64` |
+| `METRACARDS_MCP_OAUTH_TABLE` | *(unset locally)* | DynamoDB table name; CDK sets this on Lambda |
+
+## AWS deployment
+
+Production: **Lambda** (Node 20 + Lambda Web Adapter) behind **API Gateway HTTP API** with custom domain **`mcp.metraedu.com.br`**, **DynamoDB** for durable OAuth state, and Route53 alias + ACM TLS. CDK lives under `infrastructure/`.
+
+### CDK context
+
+Set real values in `cdk.json` (or pass `-c` flags). Shape:
+
+```json
+{
+  "metracards-mcp:env": { "account": "...", "region": "us-east-1" },
+  "metracards-mcp:domain": {
+    "domainName": "mcp.metraedu.com.br",
+    "certificateArn": "arn:aws:acm:us-east-1:...:certificate/...",
+    "route53": {
+      "hostedZoneId": "Z...",
+      "hostedZoneName": "metraedu.com.br"
+    }
+  },
+  "metracards-mcp:firebase": {
+    "apiKey": "...",
+    "authDomain": "...",
+    "projectId": "...",
+    "storageBucket": "...",
+    "messagingSenderId": "...",
+    "appId": "..."
+  },
+  "metracards-mcp:apiUrl": "https://..."
+}
+```
+
+| Context key | Purpose |
+|-------------|---------|
+| `metracards-mcp:env` | AWS account and region |
+| `metracards-mcp:domain` | Custom domain, ACM cert ARN, optional Route53 zone |
+| `metracards-mcp:firebase` | Firebase web config (same values as metracards-web) |
+| `metracards-mcp:apiUrl` | MetraCards API base URL (no trailing slash) |
+
+### Synth and deploy
+
+```bash
+npm install
+npm run build
+npm run synth          # validate template
+npx cdk deploy         # or: npm run deploy
+```
+
+Stack outputs: `McpUrl` (`https://mcp.metraedu.com.br/mcp`) and `OAuthStoreTableName`.
+
+### Post-deploy (Firebase)
+
+In the Firebase console → **Authentication** → **Settings** → **Authorized domains**, add **`mcp.metraedu.com.br`**. Without this, browser login during OAuth Connect fails on the production hostname.
+
+### Local OAuth store
+
+Leave **`METRACARDS_MCP_OAUTH_TABLE` unset** in `.env` for `npm start`. The app uses the in-memory store (state lost on restart; fine for single-process local dev). Lambda receives the table name from CDK automatically.
+
+### Manual smoke checklist (after deploy)
+
+1. **Well-known metadata** — PRM and AS discovery on the custom domain:
+   ```bash
+   curl -sS https://mcp.metraedu.com.br/.well-known/oauth-protected-resource | jq .
+   curl -sS https://mcp.metraedu.com.br/.well-known/oauth-authorization-server | jq .
+   ```
+2. **Authenticated MCP** — `POST https://mcp.metraedu.com.br/mcp` with `Authorization: Bearer <Firebase ID token>`; run `health_check` and `decks_list`.
+3. **Optional — Connect durability** — full DCR → authorize → token flow, then repeat after a cold start (wait >10 min or force a new Lambda instance) to confirm Dynamo-backed OAuth survives restarts.
 
 ## Pointing at another API URL
 
