@@ -30,7 +30,7 @@ import {
   buildAuthorizationServerMetadata,
   buildProtectedResourceMetadata,
 } from './oauth/metadata.js';
-import { createOAuthStore } from './oauth/store.js';
+import { createMemoryOAuthStore } from './oauth/store.js';
 import { createTokenHandler } from './oauth/token.js';
 import { createServer } from './server/create-server.js';
 
@@ -56,7 +56,7 @@ if (!projectId) {
 const resourceUrl = new URL(config.http.resourceUrl);
 const resourceMetadataUrl = getOAuthProtectedResourceMetadataUrl(resourceUrl);
 const prmPath = new URL(resourceMetadataUrl).pathname;
-const oauthStore = createOAuthStore();
+const oauthStore = createMemoryOAuthStore();
 const authorizationServerMetadata = buildAuthorizationServerMetadata(
   config.http.issuerUrl,
 );

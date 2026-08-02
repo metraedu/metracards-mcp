@@ -17,15 +17,6 @@ type AuthorizeRouterDependencies = {
     projectId: string,
   ) => Promise<VerifiedFirebaseIdToken>;
   now?: () => number;
-  pendingTtlMs?: number;
-};
-
-type PendingAuthorizeRequest = {
-  clientId: string;
-  redirectUri: string;
-  codeChallenge: string;
-  state?: string;
-  createdAtMs: number;
 };
 
 type AuthorizeQuery = {
@@ -87,23 +78,10 @@ export function createAuthorizeRouter(
   deps: AuthorizeRouterDependencies,
 ): Router {
   const router = Router();
-  const pendingRequests = new Map<string, PendingAuthorizeRequest>();
   const now = deps.now ?? (() => Date.now());
-  const pendingTtlMs = deps.pendingTtlMs ?? 600_000;
   const verifyIdToken = deps.verifyIdToken ?? verifyFirebaseIdToken;
 
-  function getPendingRequest(
-    loginState: string,
-  ): PendingAuthorizeRequest | undefined {
-    const pending = pendingRequests.get(loginState);
-    if (!pending) {
-      return undefined;
-    }
-    pendingRequests.delete(loginState);
-    return pending.createdAtMs + pendingTtlMs > now() ? pending : undefined;
-  }
-
-  router.get('/authorize', (req, res) => {
+  router.get('/authorize', async (req, res) => {
     const query = req.query as AuthorizeQuery;
     const responseType = getString(query.response_type);
     const clientId = getString(query.client_id);
@@ -112,7 +90,7 @@ export function createAuthorizeRouter(
     const codeChallengeMethod = getString(query.code_challenge_method);
     const state = getString(query.state);
 
-    const client = clientId ? deps.store.getClient(clientId) : undefined;
+    const client = clientId ? await deps.store.getClient(clientId) : undefined;
     if (!client || !clientId) {
       invalidRequest(res, 'Unknown client_id');
       return;
@@ -140,7 +118,7 @@ export function createAuthorizeRouter(
     }
 
     const loginState = randomUUID();
-    pendingRequests.set(loginState, {
+    await deps.store.savePendingAuthorize(loginState, {
       clientId,
       redirectUri,
       codeChallenge,
@@ -163,7 +141,7 @@ export function createAuthorizeRouter(
       return;
     }
 
-    const pending = getPendingRequest(loginState);
+    const pending = await deps.store.consumePendingAuthorize(loginState);
     if (!pending) {
       invalidRequest(res, 'Invalid login state');
       return;
@@ -182,7 +160,7 @@ export function createAuthorizeRouter(
     }
 
     const code = randomUUID();
-    deps.store.saveAuthCode(code, {
+    await deps.store.saveAuthCode(code, {
       clientId: pending.clientId,
       redirectUri: pending.redirectUri,
       codeChallenge: pending.codeChallenge,

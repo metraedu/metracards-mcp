@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net';
 import { describe, it } from 'node:test';
 import express from 'express';
 import { createTokenHandler } from './token.ts';
-import { createOAuthStore } from './store.ts';
+import { createMemoryOAuthStore } from './store.ts';
 
 async function withListeningApp(
   app: express.Express,
@@ -28,7 +28,7 @@ async function withListeningApp(
 }
 
 function createApp(
-  store: ReturnType<typeof createOAuthStore>,
+  store: ReturnType<typeof createMemoryOAuthStore>,
   fetchImpl?: typeof fetch,
 ): express.Express {
   const app = express();
@@ -51,9 +51,9 @@ function s256(verifier: string): string {
 
 describe('createTokenHandler', () => {
   it('exchanges a verified authorization code for its Firebase tokens', async () => {
-    const store = createOAuthStore();
+    const store = createMemoryOAuthStore();
     const verifier = 'verifier';
-    store.saveAuthCode('authorization-code', {
+    await store.saveAuthCode('authorization-code', {
       clientId: 'client-id',
       redirectUri: 'http://127.0.0.1/callback',
       codeChallenge: s256(verifier),
@@ -94,8 +94,8 @@ describe('createTokenHandler', () => {
   });
 
   it('rejects an authorization code with an invalid PKCE verifier', async () => {
-    const store = createOAuthStore();
-    store.saveAuthCode('authorization-code', {
+    const store = createMemoryOAuthStore();
+    await store.saveAuthCode('authorization-code', {
       clientId: 'client-id',
       redirectUri: 'http://127.0.0.1/callback',
       codeChallenge: s256('correct-verifier'),
@@ -127,7 +127,7 @@ describe('createTokenHandler', () => {
   });
 
   it('exchanges a Firebase refresh token for a refreshed ID token', async () => {
-    const store = createOAuthStore();
+    const store = createMemoryOAuthStore();
     const fetchImpl: typeof fetch = async (input, init) => {
       assert.equal(
         input,

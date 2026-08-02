@@ -55,7 +55,7 @@ export function createTokenHandler(
         return;
       }
 
-      const record = deps.store.consumeAuthCode(code);
+      const record = await deps.store.consumeAuthCode(code);
       if (
         !record ||
         record.clientId !== clientId ||

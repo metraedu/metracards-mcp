@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import express from 'express';
 import { createDcrRouter } from './dcr.ts';
-import { createOAuthStore } from './store.ts';
+import { createMemoryOAuthStore } from './store.ts';
 
 async function withListeningApp(
   app: express.Express,
@@ -28,7 +28,7 @@ async function withListeningApp(
 
 describe('createDcrRouter', () => {
   it('registers client and persists in store', async () => {
-    const store = createOAuthStore();
+    const store = createMemoryOAuthStore();
     const app = express();
     app.use(createDcrRouter(store));
 
@@ -55,7 +55,7 @@ describe('createDcrRouter', () => {
       ]);
       assert.equal(body.token_endpoint_auth_method, 'none');
 
-      const saved = store.getClient(body.client_id);
+      const saved = await store.getClient(body.client_id);
       assert.ok(saved);
       assert.equal(saved.clientId, body.client_id);
       assert.deepEqual(saved.redirectUris, body.redirect_uris);
@@ -65,7 +65,7 @@ describe('createDcrRouter', () => {
   });
 
   it('rejects empty redirect_uris with 400 OAuth error', async () => {
-    const store = createOAuthStore();
+    const store = createMemoryOAuthStore();
     const app = express();
     app.use(createDcrRouter(store));
 
@@ -90,7 +90,7 @@ describe('createDcrRouter', () => {
   });
 
   it('rejects redirect URIs without HTTP(S) schemes or with fragments', async () => {
-    const store = createOAuthStore();
+    const store = createMemoryOAuthStore();
     const app = express();
     app.use(createDcrRouter(store));
 

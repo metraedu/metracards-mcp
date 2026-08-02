@@ -17,37 +17,55 @@ export type AuthCodeRecord = {
   expiresAtMs: number;
 };
 
-export type OAuthStore = {
-  saveClient(client: RegisteredClient): void;
-  getClient(clientId: string): RegisteredClient | undefined;
-  saveAuthCode(code: string, record: AuthCodeRecord): void;
-  consumeAuthCode(code: string): AuthCodeRecord | undefined;
+export type PendingAuthorizeRequest = {
+  clientId: string;
+  redirectUri: string;
+  codeChallenge: string;
+  state?: string;
+  createdAtMs: number;
 };
 
-export function createOAuthStore(options?: {
+export type OAuthStore = {
+  saveClient(client: RegisteredClient): Promise<void>;
+  getClient(clientId: string): Promise<RegisteredClient | undefined>;
+  saveAuthCode(code: string, record: AuthCodeRecord): Promise<void>;
+  consumeAuthCode(code: string): Promise<AuthCodeRecord | undefined>;
+  savePendingAuthorize(
+    loginState: string,
+    record: PendingAuthorizeRequest,
+  ): Promise<void>;
+  consumePendingAuthorize(
+    loginState: string,
+  ): Promise<PendingAuthorizeRequest | undefined>;
+};
+
+export function createMemoryOAuthStore(options?: {
   codeTtlMs?: number;
+  pendingTtlMs?: number;
   now?: () => number;
 }): OAuthStore {
   const codeTtlMs = options?.codeTtlMs ?? 120_000;
+  const pendingTtlMs = options?.pendingTtlMs ?? 600_000;
   const now = options?.now ?? (() => Date.now());
 
   const clients = new Map<string, RegisteredClient>();
   const authCodes = new Map<string, AuthCodeRecord>();
+  const pendingAuthorizes = new Map<string, PendingAuthorizeRequest>();
 
   return {
-    saveClient(client) {
+    async saveClient(client) {
       clients.set(client.clientId, client);
     },
-    getClient(clientId) {
+    async getClient(clientId) {
       return clients.get(clientId);
     },
-    saveAuthCode(code, record) {
+    async saveAuthCode(code, record) {
       authCodes.set(code, {
         ...record,
         expiresAtMs: now() + codeTtlMs,
       });
     },
-    consumeAuthCode(code) {
+    async consumeAuthCode(code) {
       const record = authCodes.get(code);
       if (record === undefined) {
         return undefined;
@@ -58,5 +76,22 @@ export function createOAuthStore(options?: {
       }
       return record;
     },
+    async savePendingAuthorize(loginState, record) {
+      pendingAuthorizes.set(loginState, record);
+    },
+    async consumePendingAuthorize(loginState) {
+      const record = pendingAuthorizes.get(loginState);
+      if (record === undefined) {
+        return undefined;
+      }
+      pendingAuthorizes.delete(loginState);
+      if (record.createdAtMs + pendingTtlMs <= now()) {
+        return undefined;
+      }
+      return record;
+    },
   };
 }
+
+/** @deprecated Use createMemoryOAuthStore instead. */
+export const createOAuthStore = createMemoryOAuthStore;

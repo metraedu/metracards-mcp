@@ -6,7 +6,10 @@ import { describe, it } from 'node:test';
 import express from 'express';
 import type { FirebaseConfig } from '../auth/types.ts';
 import { createAuthorizeRouter } from './authorize.ts';
-import { createOAuthStore, type OAuthStore } from './store.ts';
+import {
+  createMemoryOAuthStore,
+  type OAuthStore,
+} from './store.ts';
 import { createTokenHandler } from './token.ts';
 
 const firebase: FirebaseConfig = {
@@ -55,8 +58,8 @@ function firebaseIdToken(exp: number): string {
 describe('createAuthorizeRouter', () => {
   it('rejects an unknown client and an unregistered redirect URI', async () => {
     const store: OAuthStore = {
-      saveClient() {},
-      getClient(clientId) {
+      async saveClient() {},
+      async getClient(clientId) {
         return clientId === 'known-client'
           ? {
               clientId,
@@ -66,8 +69,12 @@ describe('createAuthorizeRouter', () => {
             }
           : undefined;
       },
-      saveAuthCode() {},
-      consumeAuthCode() {
+      async saveAuthCode() {},
+      async consumeAuthCode() {
+        return undefined;
+      },
+      async savePendingAuthorize() {},
+      async consumePendingAuthorize() {
         return undefined;
       },
     };
@@ -96,8 +103,8 @@ describe('createAuthorizeRouter', () => {
   });
 
   it('redirects request errors after validating the registered client', async () => {
-    const store = createOAuthStore();
-    store.saveClient({
+    const store = createMemoryOAuthStore();
+    await store.saveClient({
       clientId: 'client-id',
       redirectUris: ['https://client.example/callback'],
       tokenEndpointAuthMethod: 'none',
@@ -128,8 +135,8 @@ describe('createAuthorizeRouter', () => {
   });
 
   it('allows authorization requests without state', async () => {
-    const store = createOAuthStore();
-    store.saveClient({
+    const store = createMemoryOAuthStore();
+    await store.saveClient({
       clientId: 'client-id',
       redirectUris: ['https://client.example/callback'],
       tokenEndpointAuthMethod: 'none',
@@ -154,12 +161,12 @@ describe('createAuthorizeRouter', () => {
   });
 
   it('issues a one-time code after verifying the Firebase ID token', async () => {
-    const store = createOAuthStore();
+    const store = createMemoryOAuthStore();
     const verifier = 'verifier';
     const idToken = 'signed-firebase-id-token';
     const verifiedExpiresAt = Math.floor(Date.now() / 1000) + 900;
     let verifiedToken: string | undefined;
-    store.saveClient({
+    await store.saveClient({
       clientId: 'client-id',
       redirectUris: ['http://127.0.0.1/callback?existing=value'],
       tokenEndpointAuthMethod: 'none',

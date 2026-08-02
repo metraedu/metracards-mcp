@@ -20,7 +20,7 @@ export function createDcrRouter(store: OAuthStore): express.Router {
   const router = express.Router();
 
   router.use('/register', cors());
-  router.post('/register', express.json(), (req, res) => {
+  router.post('/register', express.json(), async (req, res) => {
     const body = req.body as DcrRequestBody;
 
     if (!Array.isArray(body.redirect_uris) || body.redirect_uris.length === 0) {
@@ -60,7 +60,7 @@ export function createDcrRouter(store: OAuthStore): express.Router {
       createdAt: new Date().toISOString(),
     };
 
-    store.saveClient(client);
+    await store.saveClient(client);
 
     res.status(201).json({
       client_id: clientId,

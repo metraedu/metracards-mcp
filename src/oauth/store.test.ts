@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createOAuthStore } from './store.ts';
+import { createMemoryOAuthStore } from './store.ts';
 import type { AuthCodeRecord, RegisteredClient } from './store.ts';
 
 const sampleClient: RegisteredClient = {
@@ -25,60 +25,94 @@ function sampleAuthCodeRecord(expiresAtMs = 0): AuthCodeRecord {
 }
 
 describe('OAuthStore', () => {
-  it('save/get client round-trip', () => {
-    const store = createOAuthStore();
-    store.saveClient(sampleClient);
-    assert.deepEqual(store.getClient('client-1'), sampleClient);
-    assert.equal(store.getClient('missing'), undefined);
+  it('save/get client round-trip', async () => {
+    const store = createMemoryOAuthStore();
+    await store.saveClient(sampleClient);
+    assert.deepEqual(await store.getClient('client-1'), sampleClient);
+    assert.equal(await store.getClient('missing'), undefined);
   });
 
-  it('saveAuthCode sets expiry from codeTtlMs', () => {
+  it('saveAuthCode sets expiry from codeTtlMs', async () => {
     let currentTime = 1000;
-    const store = createOAuthStore({
+    const store = createMemoryOAuthStore({
       now: () => currentTime,
       codeTtlMs: 60_000,
     });
-    store.saveAuthCode('code-1', sampleAuthCodeRecord());
-    const consumed = store.consumeAuthCode('code-1');
+    await store.saveAuthCode('code-1', sampleAuthCodeRecord());
+    const consumed = await store.consumeAuthCode('code-1');
     assert.deepEqual(consumed, {
       ...sampleAuthCodeRecord(),
       expiresAtMs: 61_000,
     });
   });
 
-  it('consumeAuthCode returns record once then undefined', () => {
+  it('consumeAuthCode returns record once then undefined', async () => {
     let currentTime = 1000;
-    const store = createOAuthStore({
+    const store = createMemoryOAuthStore({
       now: () => currentTime,
       codeTtlMs: 120_000,
     });
-    store.saveAuthCode('code-1', sampleAuthCodeRecord());
-    const record = store.consumeAuthCode('code-1');
+    await store.saveAuthCode('code-1', sampleAuthCodeRecord());
+    const record = await store.consumeAuthCode('code-1');
     assert.equal(record?.clientId, 'client-1');
-    assert.equal(store.consumeAuthCode('code-1'), undefined);
+    assert.equal(await store.consumeAuthCode('code-1'), undefined);
   });
 
-  it('consumeAuthCode returns undefined when expired', () => {
+  it('consumeAuthCode returns undefined when expired', async () => {
     let currentTime = 1000;
-    const store = createOAuthStore({
+    const store = createMemoryOAuthStore({
       now: () => currentTime,
       codeTtlMs: 120_000,
     });
-    store.saveAuthCode('code-1', sampleAuthCodeRecord());
+    await store.saveAuthCode('code-1', sampleAuthCodeRecord());
     currentTime = 1000 + 120_001;
-    assert.equal(store.consumeAuthCode('code-1'), undefined);
+    assert.equal(await store.consumeAuthCode('code-1'), undefined);
   });
 
-  it('consumeAuthCode returns undefined when missing', () => {
-    const store = createOAuthStore();
-    assert.equal(store.consumeAuthCode('missing'), undefined);
+  it('consumeAuthCode returns undefined when missing', async () => {
+    const store = createMemoryOAuthStore();
+    assert.equal(await store.consumeAuthCode('missing'), undefined);
   });
 
-  it('defaults codeTtlMs to 120_000', () => {
+  it('defaults codeTtlMs to 120_000', async () => {
     let currentTime = 5000;
-    const store = createOAuthStore({ now: () => currentTime });
-    store.saveAuthCode('code-1', sampleAuthCodeRecord());
-    const record = store.consumeAuthCode('code-1');
+    const store = createMemoryOAuthStore({ now: () => currentTime });
+    await store.saveAuthCode('code-1', sampleAuthCodeRecord());
+    const record = await store.consumeAuthCode('code-1');
     assert.equal(record?.expiresAtMs, 125_000);
+  });
+
+  it('consumes pending authorize once within TTL', async () => {
+    let nowMs = 1_000;
+    const store = createMemoryOAuthStore({
+      pendingTtlMs: 100,
+      now: () => nowMs,
+    });
+    await store.savePendingAuthorize('login-1', {
+      clientId: 'c1',
+      redirectUri: 'https://client.example/cb',
+      codeChallenge: 'challenge',
+      state: 's',
+      createdAtMs: nowMs,
+    });
+    const first = await store.consumePendingAuthorize('login-1');
+    assert.equal(first?.clientId, 'c1');
+    assert.equal(await store.consumePendingAuthorize('login-1'), undefined);
+  });
+
+  it('rejects expired pending authorize', async () => {
+    let nowMs = 1_000;
+    const store = createMemoryOAuthStore({
+      pendingTtlMs: 50,
+      now: () => nowMs,
+    });
+    await store.savePendingAuthorize('login-2', {
+      clientId: 'c1',
+      redirectUri: 'https://client.example/cb',
+      codeChallenge: 'challenge',
+      createdAtMs: nowMs,
+    });
+    nowMs = 1_100;
+    assert.equal(await store.consumePendingAuthorize('login-2'), undefined);
   });
 });
