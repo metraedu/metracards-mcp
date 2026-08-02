@@ -22,7 +22,7 @@ export function registerCardsList(
         return textResult(await client.listFlashcards({ deck_id, since }));
       } catch (err) {
         return mapToolError(err, {
-          authHint: 'Call auth_login to sign in before using card tools.',
+          authHint: 'Authenticate via OAuth Connect or Authorization: Bearer <Firebase ID token>.',
         });
       }
     },

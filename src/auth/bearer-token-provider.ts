@@ -8,8 +8,6 @@ export type BearerTokenProviderOptions = {
 };
 
 export class BearerTokenProvider implements TokenProvider {
-  readonly canPersistCredentials = false;
-
   private readonly uid: string;
   private readonly idToken: string;
   private readonly email: string | null;
@@ -39,6 +37,4 @@ export class BearerTokenProvider implements TokenProvider {
   }
 
   clearCache(): void {}
-
-  seedCache(_idToken: string, _expiresInSec?: number): void {}
 }

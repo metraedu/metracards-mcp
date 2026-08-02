@@ -11,7 +11,8 @@ export function registerAuthStatus(
   server.registerTool(
     'auth_status',
     {
-      description: 'Show whether MetraCards MCP has stored user credentials',
+      description:
+        'Show whether the current MCP request has an authenticated user (Bearer / OAuth)',
       inputSchema: z.object({}),
     },
     async () => {

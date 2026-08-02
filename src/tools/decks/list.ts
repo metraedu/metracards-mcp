@@ -20,7 +20,7 @@ export function registerDecksList(
         return textResult(await client.listDecks(since));
       } catch (err) {
         return mapToolError(err, {
-          authHint: 'Call auth_login to sign in before using deck tools.',
+          authHint: 'Authenticate via OAuth Connect or Authorization: Bearer <Firebase ID token>.',
         });
       }
     },

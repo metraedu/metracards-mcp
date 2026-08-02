@@ -1,5 +1,4 @@
 import { config as loadDotenv } from 'dotenv';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { FirebaseConfig } from '../auth/types.js';
@@ -22,7 +21,6 @@ export type HttpConfig = {
 
 export type AppConfig = {
   apiUrl: string;
-  credentialsPath: string;
   firebase: FirebaseConfig | null;
   http: HttpConfig;
   maxMediaBytes: number;
@@ -56,15 +54,6 @@ function readFirebaseConfig(): FirebaseConfig | null {
     messagingSenderId,
     appId,
   };
-}
-
-export function defaultCredentialsPath(): string {
-  return path.join(
-    os.homedir(),
-    '.config',
-    'metracards-mcp',
-    'credentials.json',
-  );
 }
 
 function parseCsv(value: string | undefined): string[] {
@@ -115,16 +104,12 @@ export function loadConfig(): AppConfig {
   const apiUrl =
     process.env.METRACARDS_API_URL?.trim() ||
     'https://1wcwb3my4l.execute-api.us-east-1.amazonaws.com/prod';
-  const credentialsPath =
-    process.env.METRACARDS_MCP_CREDENTIALS_PATH?.trim() ||
-    defaultCredentialsPath();
   const maxMediaBytes = Number(
     process.env.METRACARDS_MCP_MAX_MEDIA_BYTES?.trim() || '10485760',
   );
 
   return {
     apiUrl: apiUrl.replace(/\/$/, ''),
-    credentialsPath,
     firebase: readFirebaseConfig(),
     http: readHttpConfig(),
     maxMediaBytes:

@@ -34,7 +34,7 @@ export function registerCardsUpdate(
         return textResult(await client.updateFlashcard(id, body));
       } catch (err) {
         return mapToolError(err, {
-          authHint: 'Call auth_login to sign in before using card tools.',
+          authHint: 'Authenticate via OAuth Connect or Authorization: Bearer <Firebase ID token>.',
         });
       }
     },

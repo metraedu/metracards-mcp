@@ -25,7 +25,7 @@ export function registerDecksUpdate(
         return textResult(await client.updateDeck(id, body));
       } catch (err) {
         return mapToolError(err, {
-          authHint: 'Call auth_login to sign in before using deck tools.',
+          authHint: 'Authenticate via OAuth Connect or Authorization: Bearer <Firebase ID token>.',
         });
       }
     },

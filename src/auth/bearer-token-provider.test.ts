@@ -8,7 +8,6 @@ describe('BearerTokenProvider', () => {
       uid: 'u1',
       idToken: 'tok',
     });
-    assert.equal(provider.canPersistCredentials, false);
     assert.equal(await provider.getIdToken(), 'tok');
     assert.equal(await provider.getUid(), 'u1');
     assert.deepEqual(await provider.getProfile(), {
@@ -18,13 +17,12 @@ describe('BearerTokenProvider', () => {
     });
   });
 
-  it('clearCache and seedCache are no-ops', async () => {
+  it('clearCache is a no-op', async () => {
     const provider = new BearerTokenProvider({
       uid: 'u1',
       idToken: 'tok',
     });
     provider.clearCache();
-    provider.seedCache('other');
     assert.equal(await provider.getIdToken(), 'tok');
   });
 });

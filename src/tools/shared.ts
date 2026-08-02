@@ -22,7 +22,7 @@ export function mapToolError(
         error: err.message || 'Not authenticated',
         hint:
           options?.authHint ??
-          'Call auth_login to sign in before using this tool.',
+          'Authenticate via OAuth Connect or Authorization: Bearer <Firebase ID token>.',
       },
       true,
     );
