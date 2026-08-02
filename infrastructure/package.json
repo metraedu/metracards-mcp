@@ -1,0 +1,11 @@
+{
+  "name": "metracards-mcp-infrastructure",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "cd .. && npx tsc --project tsconfig.cdk.json --noEmit",
+    "cdk": "cd .. && npx cdk",
+    "deploy": "cd .. && npx cdk deploy",
+    "synth": "cd .. && npx cdk synth"
+  }
+}
