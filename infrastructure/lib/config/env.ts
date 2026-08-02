@@ -30,33 +30,39 @@ export interface McpConfig {
   readonly apiUrl: string;
 }
 
-function requireString(value: string | undefined, name: string): string {
-  if (!value) {
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function requireString(value: unknown, name: string): string {
+  if (typeof value !== 'string') {
+    throw new Error(`Invalid config: ${name} must be a string`);
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
     throw new Error(`Missing required config: ${name}`);
   }
 
-  return value;
+  return trimmed;
 }
 
-function requireObject<T>(value: T | undefined, name: string): T {
-  if (!value) {
-    throw new Error(`Missing required config object: ${name}`);
+function requireObject(value: unknown, name: string): Record<string, unknown> {
+  if (!isPlainObject(value)) {
+    throw new Error(`Missing or invalid config object: ${name}`);
   }
 
   return value;
 }
 
 export function loadMcpConfig(app: cdk.App): McpConfig {
-  const env = requireObject(
-    app.node.tryGetContext('metracards-mcp:env') as McpEnvContext | undefined,
-    'metracards-mcp:env',
-  );
+  const env = requireObject(app.node.tryGetContext('metracards-mcp:env'), 'metracards-mcp:env');
   const domain = requireObject(
-    app.node.tryGetContext('metracards-mcp:domain') as McpDomainContext | undefined,
+    app.node.tryGetContext('metracards-mcp:domain'),
     'metracards-mcp:domain',
   );
   const firebase = requireObject(
-    app.node.tryGetContext('metracards-mcp:firebase') as McpFirebaseContext | undefined,
+    app.node.tryGetContext('metracards-mcp:firebase'),
     'metracards-mcp:firebase',
   );
 
@@ -68,7 +74,7 @@ export function loadMcpConfig(app: cdk.App): McpConfig {
     domain: {
       domainName: requireString(domain.domainName, 'domain.domainName'),
       certificateArn: requireString(domain.certificateArn, 'domain.certificateArn'),
-      route53: domain.route53
+      route53: isPlainObject(domain.route53)
         ? {
             hostedZoneId: requireString(domain.route53.hostedZoneId, 'domain.route53.hostedZoneId'),
             hostedZoneName: requireString(
@@ -89,9 +95,6 @@ export function loadMcpConfig(app: cdk.App): McpConfig {
       ),
       appId: requireString(firebase.appId, 'firebase.appId'),
     },
-    apiUrl: requireString(
-      app.node.tryGetContext('metracards-mcp:apiUrl') as string | undefined,
-      'metracards-mcp:apiUrl',
-    ),
+    apiUrl: requireString(app.node.tryGetContext('metracards-mcp:apiUrl'), 'metracards-mcp:apiUrl'),
   };
 }
