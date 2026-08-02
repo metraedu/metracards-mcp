@@ -13,6 +13,7 @@
     "start:http": "node dist/index.js",
     "dev": "tsc --watch",
     "test": "node --experimental-strip-types --test src/**/*.test.ts",
+    "test:infra": "ts-node --project tsconfig.cdk.json --prefer-ts-exts infrastructure/test/snapshot.test.ts",
     "synth": "cdk synth",
     "deploy": "cdk deploy"
   },
