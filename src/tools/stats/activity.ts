@@ -11,7 +11,7 @@ export function registerStatsActivity(
     'stats_activity',
     {
       description:
-        'Get review activity calendar (reviews_by_date, streaks). GET /activity',
+        'Get review activity calendar (reviews_by_date, streaks). Optional months (1–24) defaults to 12 when omitted. GET /activity',
       inputSchema: z.object({
         months: z.number().int().min(1).max(24).optional(),
       }),

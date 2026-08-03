@@ -11,7 +11,8 @@ export function registerDecksDeleteBatch(
   server.registerTool(
     'decks_delete_batch',
     {
-      description: 'Delete up to 100 decks by id (POST /decks/batch/delete)',
+      description:
+        'Delete up to 100 decks by id. Also removes each deck\'s flashcards and permanently deletes their review history and media files (POST /decks/batch/delete).',
       inputSchema: z.object({
         ids: z.array(uuidSchema).min(1).max(100),
       }),

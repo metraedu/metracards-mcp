@@ -57,11 +57,11 @@ You need a MetraCards account (the same Google or Apple login used in the app an
 | `schedules_create_batch` | `POST /review-schedules/batch` (auth; 1–500) |
 | `schedules_delete_batch` | `POST /review-schedules/batch/delete` (auth; 1–500 ids) |
 | `decks_create_batch` | `POST /decks/batch` (auth; 1–100) |
-| `decks_delete_batch` | `POST /decks/batch/delete` (auth; 1–100 ids) |
+| `decks_delete_batch` | `POST /decks/batch/delete` (auth; 1–100 ids; cascade deletes flashcards, review history, and media) |
 | `cards_create_batch` | `POST /flashcards/batch` (auth; 1–500) |
 | `cards_delete_batch` | `POST /flashcards/batch/delete` (auth; 1–500 ids) |
 | `stats_usage` | `GET /users/usage-stats` (auth) |
-| `stats_activity` | `GET /activity` (auth; optional `months` 1–24) |
+| `stats_activity` | `GET /activity` (auth; optional `months` 1–24, default 12) |
 
 Typical flow: authenticate, pick or create a deck, create a card, call `cards_upload_media`, then optionally `cards_generate_audio`.
 
