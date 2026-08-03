@@ -1,8 +1,19 @@
 node_modules/
 dist/
-cdk.out/
 .env
 *.log
 .DS_Store
 .worktrees
+
+# Deploy / AWS (keep local only — not published)
+infrastructure/
+cdk.json
+cdk.out/
 cdk.context.json
+cdk.context.local.json
+cdk.context.local.example.json
+cdk.context.example.json
+tsconfig.cdk.json
+run.sh
+docs/superpowers/plans/2026-08-02-mcp-lambda-hosting.md
+docs/superpowers/specs/2026-08-02-mcp-lambda-hosting-design.md

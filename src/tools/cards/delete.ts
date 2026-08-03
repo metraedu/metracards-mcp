@@ -19,7 +19,7 @@ export function registerCardsDelete(
         return textResult(await client.deleteFlashcard(id));
       } catch (err) {
         return mapToolError(err, {
-          authHint: 'Authenticate via OAuth Connect or Authorization: Bearer <Firebase ID token>.',
+          authHint: 'On stdio call auth_login; on HTTP use OAuth Connect or Authorization: Bearer <Firebase ID token>.',
         });
       }
     },

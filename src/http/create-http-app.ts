@@ -18,6 +18,7 @@ import {
   verifyFirebaseIdToken,
 } from '../auth/firebase-jwt.js';
 import { BearerTokenProvider } from '../auth/bearer-token-provider.js';
+import { CredentialStore } from '../auth/credential-store.js';
 import { MetraCardsApiClient } from '../clients/metracards-api.js';
 import type { AppConfig } from '../config/index.js';
 import { createAuthorizeRouter } from '../oauth/authorize.js';
@@ -44,9 +45,6 @@ export type HttpApp = {
 
 export function createHttpApp(deps: CreateHttpAppDeps): HttpApp {
   const firebase = deps.config.firebase;
-  if (!firebase) {
-    throw new Error('Firebase configuration is required to create the HTTP app');
-  }
   const resourceUrl = new URL(deps.config.http.resourceUrl);
   const resourceMetadataUrl = getOAuthProtectedResourceMetadataUrl(resourceUrl);
   const prmPath = new URL(resourceMetadataUrl).pathname;
@@ -87,12 +85,13 @@ export function createHttpApp(deps: CreateHttpAppDeps): HttpApp {
     if (!authInfo) {
       throw new Error('Missing authInfo for MCP request');
     }
+    const store = new CredentialStore(deps.config.credentialsPath);
     const tokenProvider = new BearerTokenProvider({
       uid: authInfo.clientId,
       idToken: authInfo.token,
     });
     const client = new MetraCardsApiClient(deps.config.apiUrl, tokenProvider);
-    return createServer({ tokenProvider, client });
+    return createServer({ store, tokenProvider, client });
   });
   const nodeHandler = toNodeHandler(mcpHandler, {
     onerror: (error) => {

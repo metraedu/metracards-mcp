@@ -1,14 +1,34 @@
-# metracards-mcp
+# MetraCards MCP
 
-MCP server for [MetraCards API](../metracards_api). Exposes tools that call the API with the same Firebase auth contract as metracards-web.
+MCP server for MetraCards — manage decks and flashcards from **Cursor**, **Claude Desktop**, **Claude Code**, or **ChatGPT**.
 
-Transport: **Streamable HTTP** at `/mcp`. Authenticate with **OAuth Connect** or `Authorization: Bearer <Firebase ID token>`.
+You need a **MetraCards account** (same Google/Apple login as the app or website).
 
-Current tools:
+## Contents
+
+- [Choose a mode](#choose-a-mode)
+- [Tools](#tools)
+- [Remote HTTP](#remote-http)
+- [Local stdio](#local-stdio)
+- [Check that it works](#check-that-it-works)
+- [Troubleshooting](#troubleshooting)
+
+## Choose a mode
+
+| | **Remote HTTP** | **Local stdio** |
+|---|---|---|
+| When | Default for most clients | Local image/audio uploads without base64 |
+| Connect | `https://mcp.metraedu.com.br/mcp` | Run `dist/index.js` on your machine |
+| Auth | Browser OAuth / Connect | Call the `auth_login` tool once |
+| Media | `content_base64` only | Prefer absolute `file_path` |
+
+## Tools
 
 | Tool | API / behavior |
 |------|----------------|
-| `health_check` | `GET /health` (no auth at API; HTTP transport requires OAuth Connect or Bearer) |
+| `health_check` | `GET /health` (no auth at API; HTTP transport still requires Connect or Bearer) |
+| `auth_login` | stdio: browser Google/Apple → store refresh token → `POST /users`. HTTP: structured error (use Connect / Bearer) |
+| `auth_logout` | stdio: clear local credentials. HTTP: structured error |
 | `auth_status` | Whether a uid/token is available via `TokenProvider` for the current request |
 | `decks_list` | `GET /decks` (auth; optional `since`) |
 | `decks_get` | `GET /decks/{id}` (auth) |
@@ -23,162 +43,184 @@ Current tools:
 | `cards_upload_media` | Presign + S3 PUT from `file_path` **XOR** `content_base64` |
 | `cards_generate_audio` | `POST /audio` → upload TTS to S3 |
 
-## Create a card with images
+Typical card + image flow: authenticate → pick/create deck → create card → `cards_upload_media` → optional `cards_generate_audio`.
 
-1. Authenticate (OAuth Connect or Bearer)
-2. Choose/create a deck (`decks_list` / `decks_create`)
-3. Generate a flashcard UUID
-4. `cards_upload_media` with exactly one of:
-   - absolute `file_path` (works when the file exists on the MCP host)
-   - `content_base64` (preferred for remote clients; optional `content_type`, `file_extension`)
-5. `cards_create` with the same `id`, `deck_id`, `front`, `back`, and media URL/size fields if you need them on create (upload already attaches when the card exists)
+---
 
-For TTS: `cards_generate_audio` attaches audio to an existing card.
+## Remote HTTP
 
-## Prerequisites
+**URL:** `https://mcp.metraedu.com.br/mcp`
 
-- Node.js 20+
-- MetraCards API reachable (default prod API Gateway; local SAM: `http://127.0.0.1:3001`)
-- Firebase web config (same project as metracards-web)
-- Firebase authorized domain includes the public hostname used for OAuth login (and `localhost` for local dev)
+No local build. Sign in with MetraCards in the browser when the client asks.
 
-## Setup
+### Standard config (Claude Desktop via mcp-remote)
 
-```bash
-cd metracards-mcp
-npm install
-cp .env.example .env
-# copy FIREBASE_* from metracards-web (VITE_FIREBASE_* without the VITE_ prefix)
-# optionally set METRACARDS_API_URL
-npm run build
-```
+Settings → Developer → Edit Config (`claude_desktop_config.json`):
 
-The process loads `.env` from this package root.
-
-## Scripts
-
-| Script | Description |
-|--------|-------------|
-| `npm run build` | Compile TypeScript to `dist/` (+ copy OAuth login page) |
-| `npm start` / `npm run start:http` | Run Streamable HTTP on `/mcp` |
-| `npm test` | Unit tests (does **not** run infra tests) |
-| `npm run test:infra` | CDK snapshot assertions |
-| `npm run test:all` | Unit tests + CDK snapshot assertions (CI entrypoint) |
-| `npm run synth` | Synthesize CloudFormation (`cdk synth`) |
-| `npm run deploy` | Deploy stack (`cdk deploy`) |
-
-## OAuth Connect
-
-Start the server with `npm start`. HTTP requires the complete Firebase web configuration and `FIREBASE_PROJECT_ID`; Firebase must authorize the public hostname in production.
-
-OAuth-capable MCP clients such as ChatGPT Connect discover Protected Resource Metadata at `/.well-known/oauth-protected-resource` (or its `/mcp` variant), then:
-
-1. Register a public client with `POST /register` (DCR).
-2. Send the user to `GET /authorize` with an S256 PKCE challenge.
-3. Exchange the returned authorization code at `POST /token`.
-4. Call `POST /mcp` with the returned `Authorization: Bearer <Firebase ID token>`.
-
-Manual HTTP clients can supply a Firebase ID token directly as a Bearer token.
-
-OAuth state (DCR clients, auth codes, pending authorize) uses an in-memory store locally and DynamoDB in production (see [AWS deployment](#aws-deployment)).
-
-### HTTP env
-
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `METRACARDS_MCP_HTTP_HOST` | `127.0.0.1` | Bind address |
-| `METRACARDS_MCP_HTTP_PORT` | `3000` | Port |
-| `METRACARDS_MCP_RESOURCE_URL` | `http://127.0.0.1:3000/mcp` | Canonical `resource` in PRM |
-| `METRACARDS_MCP_ISSUER_URL` | origin of resource URL | OAuth AS issuer / metadata base |
-| `METRACARDS_MCP_AUTH_SERVERS` | issuer URL | PRM `authorization_servers` override |
-| `METRACARDS_MCP_ALLOWED_HOSTS` | host of resource URL | `Host` allowlist |
-| `METRACARDS_MCP_MAX_MEDIA_BYTES` | `10485760` | Max decoded `content_base64` |
-| `METRACARDS_MCP_OAUTH_TABLE` | *(unset locally)* | DynamoDB table name; CDK sets this on Lambda |
-
-## AWS deployment
-
-Production: **Lambda** (Node 22 + Lambda Web Adapter) behind **API Gateway HTTP API** with custom domain **`mcp.metraedu.com.br`**, **DynamoDB** for durable OAuth state, and Route53 alias + ACM TLS. CDK lives under `infrastructure/` and requires TypeScript 5.9+ (already pinned in `devDependencies`).
-
-### CDK context
-
-Context lives in the **repo-root `cdk.json`** (not `infrastructure/cdk.json`, which is unused). The committed `cdk.json` only has placeholder values so `npm run synth` works out of the box for anyone who clones the repo. Shape:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
-  "metracards-mcp:env": { "account": "...", "region": "us-east-1" },
-  "metracards-mcp:domain": {
-    "domainName": "mcp.metraedu.com.br",
-    "certificateArn": "arn:aws:acm:us-east-1:...:certificate/...",
-    "route53": {
-      "hostedZoneId": "Z...",
-      "hostedZoneName": "metraedu.com.br"
+  "mcpServers": {
+    "metracards": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.metraedu.com.br/mcp",
+        "--transport",
+        "http-only"
+      ]
     }
-  },
-  "metracards-mcp:firebase": {
-    "apiKey": "...",
-    "authDomain": "...",
-    "projectId": "...",
-    "storageBucket": "...",
-    "messagingSenderId": "...",
-    "appId": "..."
-  },
-  "metracards-mcp:apiUrl": "https://..."
+  }
 }
 ```
 
-| Context key | Purpose |
-|-------------|---------|
-| `metracards-mcp:env` | AWS account and region |
-| `metracards-mcp:domain` | Custom domain, ACM cert ARN, optional Route53 zone |
-| `metracards-mcp:firebase` | Firebase web config (same values as metracards-web) |
-| `metracards-mcp:apiUrl` | MetraCards API base URL (no trailing slash) |
+Requires **Node.js**. Fully quit Claude Desktop and reopen (reload is not enough).
 
-**Real values for an actual deploy do not belong in `cdk.json`.** CDK automatically loads a `cdk.context.json` next to `cdk.json` (repo root) and merges it over the base context, and `cdk.context.json` is gitignored — put real account/domain/Firebase/API values there. `cdk.context.example.json` documents the shape with placeholders; copy it to get started:
+### Claude Desktop (Connectors UI)
+
+1. Customize → Connectors → Add custom connector
+2. URL: `https://mcp.metraedu.com.br/mcp`
+3. Connect → sign in to MetraCards
+4. In a chat: **+ → Connectors** → enable MetraCards
+
+No Client ID / Secret. Free plans usually allow one custom connector.
+
+### Claude Code
 
 ```bash
-cp cdk.context.example.json cdk.context.json
-# edit cdk.context.json with real values
+claude mcp add --transport http metracards https://mcp.metraedu.com.br/mcp
 ```
 
-Note: **nested `-c` flags do not work for these object-shaped context keys.** `cdk` passes `-c` values as plain strings, so e.g. `-c metracards-mcp:domain.domainName=...` will not merge into the `metracards-mcp:domain` object the way `loadMcpConfig` expects — use `cdk.context.json` instead.
+Then `/mcp` in Claude Code and finish browser login if prompted.
 
-### Bootstrap and deploy
-
-The target AWS account/region needs to be [bootstrapped](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) once before the first deploy:
+Project scope (writes `.mcp.json`):
 
 ```bash
-npx cdk bootstrap aws://ACCOUNT_ID/REGION
+claude mcp add --transport http metracards --scope project \
+  https://mcp.metraedu.com.br/mcp
 ```
 
-Then synth/deploy:
+### Cursor (HTTP)
+
+`~/.cursor/mcp.json` or project `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "metracards": {
+      "url": "https://mcp.metraedu.com.br/mcp"
+    }
+  }
+}
+```
+
+Or Settings → MCP → add the same URL. Complete OAuth when Cursor prompts.
+
+### ChatGPT
+
+1. Enable Developer mode (Settings → Apps & Connectors → Advanced, or similar)
+2. Create connector / app
+3. **MCP URL:** `https://mcp.metraedu.com.br/mcp`
+4. **Authentication:** OAuth
+5. Sign in to MetraCards, then enable the connector in a chat
+
+---
+
+## Local stdio
+
+Use this when agents should upload files from disk via `file_path` (avoids large base64 in context).
+
+### Requirements
+
+- Node.js **20+**
+- Clone of this repo, built once
 
 ```bash
+git clone git@github.com:metraedu/metracards-mcp.git
+cd metracards-mcp
 npm install
 npm run build
-npm run synth          # validate template (uses cdk.context.json if present, else placeholders)
-npx cdk deploy         # or: npm run deploy
 ```
 
-Stack outputs: `McpUrl` (`https://mcp.metraedu.com.br/mcp`) and `OAuthStoreTableName`.
+Firebase is baked into the package. No `.env` required for normal use.  
+Optional: `.env` only to point at a local API (`METRACARDS_API_URL=http://127.0.0.1:3001`).
 
-### Post-deploy (Firebase)
+Ensure Firebase **Authorized domains** includes `localhost` (needed for `auth_login`).
 
-In the Firebase console → **Authentication** → **Settings** → **Authorized domains**, add **`mcp.metraedu.com.br`**. Without this, browser login during OAuth Connect fails on the production hostname.
+### Standard config
 
-### Local OAuth store
+Replace the path with the **absolute** path to your build:
 
-Leave **`METRACARDS_MCP_OAUTH_TABLE` unset** in `.env` for `npm start`. The app uses the in-memory store (state lost on restart; fine for single-process local dev). Lambda receives the table name from CDK automatically.
+```json
+{
+  "mcpServers": {
+    "metracards": {
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/metracards-mcp/dist/index.js"]
+    }
+  }
+}
+```
 
-### Manual smoke checklist (after deploy)
+### Cursor
 
-1. **Well-known metadata** — PRM and AS discovery on the custom domain:
-   ```bash
-   curl -sS https://mcp.metraedu.com.br/.well-known/oauth-protected-resource | jq .
-   curl -sS https://mcp.metraedu.com.br/.well-known/oauth-authorization-server | jq .
-   ```
-2. **Authenticated MCP** — `POST https://mcp.metraedu.com.br/mcp` with `Authorization: Bearer <Firebase ID token>`; run `health_check` and `decks_list`.
-3. **Optional — Connect durability** — full DCR → authorize → token flow, then repeat after a cold start (wait >10 min or force a new Lambda instance) to confirm Dynamo-backed OAuth survives restarts.
+Paste the standard config into `~/.cursor/mcp.json` or `.cursor/mcp.json`, then reload MCP / restart Cursor.
 
-## Pointing at another API URL
+### Claude Desktop
 
-Set `METRACARDS_API_URL` in `.env`. No trailing slash.
+Paste the standard config into `claude_desktop_config.json` (paths above). Fully quit and reopen Claude.
+
+### Claude Code
+
+```bash
+claude mcp add metracards -- node /ABSOLUTE/PATH/TO/metracards-mcp/dist/index.js
+```
+
+Project scope:
+
+```bash
+claude mcp add metracards --scope project -- \
+  node /ABSOLUTE/PATH/TO/metracards-mcp/dist/index.js
+```
+
+### First login (stdio only)
+
+There is no separate Authenticate button. In chat:
+
+> Call `auth_login` for MetraCards
+
+Or use **View tools** → `auth_login`.
+
+1. Browser opens on `http://127.0.0.1:<port>/`
+2. Sign in with Google or Apple
+3. Credentials saved at `~/.config/metracards-mcp/credentials.json` (`0600`)
+
+Later tools refresh the token automatically. For media, prefer absolute `file_path`.
+
+---
+
+## Check that it works
+
+Ask:
+
+- *Am I signed in to MetraCards?* / call `auth_status`
+- *List my decks.*
+- *Create a test deck called MCP Trial.*
+
+If decks appear in **your** account, you are done.
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| Server never starts | Fully quit the client (not just close the window) and reopen |
+| `spawn node ENOENT` / `npx` not found | Install Node 20+ and ensure it is on PATH; on macOS GUI apps may need full path e.g. `/opt/homebrew/bin/node` |
+| Invalid JSON / server ignored | Trailing commas break the whole `mcpServers` file — validate JSON |
+| stdio tools say not authenticated | Call `auth_login` once |
+| HTTP media upload fails with `file_path` | Hosted HTTP has no local disk — use `content_base64`, or switch to stdio |
+| OAuth / login page fails on stdio | Add `localhost` under Firebase Authentication → Authorized domains |

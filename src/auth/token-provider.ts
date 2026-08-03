@@ -9,17 +9,12 @@ export type TokenProfile = {
 };
 
 export type TokenProvider = {
+  readonly canPersistCredentials: boolean;
   getIdToken(): Promise<string>;
   getUid(): Promise<string>;
   getProfile(): Promise<TokenProfile | null>;
   clearCache(): void;
+  seedCache?(idToken: string, expiresInSec?: number): void;
 };
 
-export class AuthRequiredError extends Error {
-  constructor(
-    message = 'Not authenticated. Use OAuth Connect or Authorization: Bearer <Firebase ID token>.',
-  ) {
-    super(message);
-    this.name = 'AuthRequiredError';
-  }
-}
+export { AuthRequiredError } from './refreshing-token-provider.js';

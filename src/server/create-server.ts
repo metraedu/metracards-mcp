@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/server';
+import type { CredentialStore } from '../auth/credential-store.js';
 import type { TokenProvider } from '../auth/token-provider.js';
 import type { MetraCardsApiClient } from '../clients/metracards-api.js';
 import { config } from '../config/index.js';
@@ -10,10 +11,11 @@ import { registerHealthCheck } from '../tools/health-check.js';
 export type CreateServerOptions = {
   client: MetraCardsApiClient;
   tokenProvider: TokenProvider;
+  store: CredentialStore;
 };
 
 export function createServer(options: CreateServerOptions): McpServer {
-  const { client, tokenProvider } = options;
+  const { client, tokenProvider, store } = options;
 
   const server = new McpServer({
     name: 'metracards-mcp',
@@ -21,7 +23,12 @@ export function createServer(options: CreateServerOptions): McpServer {
   });
 
   registerHealthCheck(server, client);
-  registerAuthTools(server, { tokenProvider });
+  registerAuthTools(server, {
+    firebase: config.firebase,
+    store,
+    tokenProvider,
+    client,
+  });
   registerDecksTools(server, client);
   registerCardsTools(server, client, {
     tokenProvider,

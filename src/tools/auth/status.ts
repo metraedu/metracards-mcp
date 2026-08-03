@@ -12,7 +12,7 @@ export function registerAuthStatus(
     'auth_status',
     {
       description:
-        'Show whether the current MCP request has an authenticated user (Bearer / OAuth)',
+        'Show whether MetraCards MCP has an authenticated user (stdio credentials or HTTP Bearer / OAuth)',
       inputSchema: z.object({}),
     },
     async () => {
