@@ -4,6 +4,7 @@ dist/
 *.log
 .DS_Store
 .worktrees
+.claude/
 
 # Deploy / AWS (keep local only — not published)
 infrastructure/

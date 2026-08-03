@@ -3,7 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MCP server for MetraCards API",
+  "description": "MCP server for MetraCards. Manage decks and flashcards from Cursor, Claude, and ChatGPT.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/metraedu/metracards-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/metraedu/metracards-mcp/issues"
+  },
+  "homepage": "https://github.com/metraedu/metracards-mcp#readme",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "metracards",
+    "flashcards",
+    "claude",
+    "cursor"
+  ],
   "bin": {
     "metracards-mcp": "./dist/index.js"
   },

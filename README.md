@@ -1,8 +1,8 @@
 # MetraCards MCP
 
-MCP server for MetraCards — manage decks and flashcards from **Cursor**, **Claude Desktop**, **Claude Code**, or **ChatGPT**.
+MCP server for [MetraCards](https://metraedu.com.br). Create and manage decks and flashcards from Cursor, Claude Desktop, Claude Code, or ChatGPT.
 
-You need a **MetraCards account** (same Google/Apple login as the app or website).
+You need a MetraCards account (the same Google or Apple login used in the app and website).
 
 ## Contents
 
@@ -12,10 +12,11 @@ You need a **MetraCards account** (same Google/Apple login as the app or website
 - [Local stdio](#local-stdio)
 - [Check that it works](#check-that-it-works)
 - [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ## Choose a mode
 
-| | **Remote HTTP** | **Local stdio** |
+| | Remote HTTP | Local stdio |
 |---|---|---|
 | When | Default for most clients | Local image/audio uploads without base64 |
 | Connect | `https://mcp.metraedu.com.br/mcp` | Run `dist/index.js` on your machine |
@@ -26,10 +27,10 @@ You need a **MetraCards account** (same Google/Apple login as the app or website
 
 | Tool | API / behavior |
 |------|----------------|
-| `health_check` | `GET /health` (no auth at API; HTTP transport still requires Connect or Bearer) |
-| `auth_login` | stdio: browser Google/Apple → store refresh token → `POST /users`. HTTP: structured error (use Connect / Bearer) |
-| `auth_logout` | stdio: clear local credentials. HTTP: structured error |
-| `auth_status` | Whether a uid/token is available via `TokenProvider` for the current request |
+| `health_check` | `GET /health`. No auth at the API; HTTP transport requires Connect or Bearer. |
+| `auth_login` | stdio: browser Google/Apple → store refresh token → `POST /users`. HTTP: structured error (use Connect or Bearer). |
+| `auth_logout` | stdio: clear local credentials. HTTP: structured error. |
+| `auth_status` | Check whether a uid/token is available via `TokenProvider` for the current request. |
 | `decks_list` | `GET /decks` (auth; optional `since`) |
 | `decks_get` | `GET /decks/{id}` (auth) |
 | `decks_create` | `POST /decks` (auth) |
@@ -40,18 +41,18 @@ You need a **MetraCards account** (same Google/Apple login as the app or website
 | `cards_create` | `POST /flashcards` (auth) |
 | `cards_update` | `PUT /flashcards/{id}` (auth) |
 | `cards_delete` | `DELETE /flashcards/{id}` (auth) |
-| `cards_upload_media` | Presign + S3 PUT from `file_path` **XOR** `content_base64` |
+| `cards_upload_media` | Presign and S3 PUT from `file_path` or `content_base64` (one or the other, not both). |
 | `cards_generate_audio` | `POST /audio` → upload TTS to S3 |
 
-Typical card + image flow: authenticate → pick/create deck → create card → `cards_upload_media` → optional `cards_generate_audio`.
+Typical flow: authenticate, pick or create a deck, create a card, call `cards_upload_media`, then optionally `cards_generate_audio`.
 
 ---
 
 ## Remote HTTP
 
-**URL:** `https://mcp.metraedu.com.br/mcp`
+URL: `https://mcp.metraedu.com.br/mcp`
 
-No local build. Sign in with MetraCards in the browser when the client asks.
+No local build required. Sign in with MetraCards in the browser when the client asks.
 
 ### Standard config (Claude Desktop via mcp-remote)
 
@@ -77,16 +78,16 @@ Settings → Developer → Edit Config (`claude_desktop_config.json`):
 }
 ```
 
-Requires **Node.js**. Fully quit Claude Desktop and reopen (reload is not enough).
+Requires Node.js. Fully quit Claude Desktop and reopen. Closing the window alone is not enough.
 
 ### Claude Desktop (Connectors UI)
 
 1. Customize → Connectors → Add custom connector
 2. URL: `https://mcp.metraedu.com.br/mcp`
 3. Connect → sign in to MetraCards
-4. In a chat: **+ → Connectors** → enable MetraCards
+4. In a chat: + → Connectors → enable MetraCards
 
-No Client ID / Secret. Free plans usually allow one custom connector.
+No Client ID or Secret required. Most free plans allow one custom connector.
 
 ### Claude Code
 
@@ -123,19 +124,19 @@ Or Settings → MCP → add the same URL. Complete OAuth when Cursor prompts.
 
 1. Enable Developer mode (Settings → Apps & Connectors → Advanced, or similar)
 2. Create connector / app
-3. **MCP URL:** `https://mcp.metraedu.com.br/mcp`
-4. **Authentication:** OAuth
+3. MCP URL: `https://mcp.metraedu.com.br/mcp`
+4. Authentication: OAuth
 5. Sign in to MetraCards, then enable the connector in a chat
 
 ---
 
 ## Local stdio
 
-Use this when agents should upload files from disk via `file_path` (avoids large base64 in context).
+Use this when agents need to upload files from disk via `file_path`, which avoids sending large base64 strings in the context.
 
 ### Requirements
 
-- Node.js **20+**
+- Node.js 20+
 - Clone of this repo, built once
 
 ```bash
@@ -145,14 +146,13 @@ npm install
 npm run build
 ```
 
-Firebase is baked into the package. No `.env` required for normal use.  
-Optional: `.env` only to point at a local API (`METRACARDS_API_URL=http://127.0.0.1:3001`).
+Firebase is included with the package. You do not need a `.env` file for normal use. To point at a local API, set `METRACARDS_API_URL=http://127.0.0.1:3001` in `.env`.
 
-Ensure Firebase **Authorized domains** includes `localhost` (needed for `auth_login`).
+Add `localhost` to Firebase Authentication → Authorized domains (required for `auth_login`).
 
 ### Standard config
 
-Replace the path with the **absolute** path to your build:
+Replace the path with the absolute path to your build:
 
 ```json
 {
@@ -192,13 +192,13 @@ There is no separate Authenticate button. In chat:
 
 > Call `auth_login` for MetraCards
 
-Or use **View tools** → `auth_login`.
+Or use View tools → `auth_login`.
 
 1. Browser opens on `http://127.0.0.1:<port>/`
 2. Sign in with Google or Apple
-3. Credentials saved at `~/.config/metracards-mcp/credentials.json` (`0600`)
+3. Credentials are saved at `~/.config/metracards-mcp/credentials.json` with restricted permissions
 
-Later tools refresh the token automatically. For media, prefer absolute `file_path`.
+Later tools refresh the token automatically. For media uploads, use absolute `file_path` when possible.
 
 ---
 
@@ -206,11 +206,11 @@ Later tools refresh the token automatically. For media, prefer absolute `file_pa
 
 Ask:
 
-- *Am I signed in to MetraCards?* / call `auth_status`
+- *Am I signed in to MetraCards?* or call `auth_status`
 - *List my decks.*
 - *Create a test deck called MCP Trial.*
 
-If decks appear in **your** account, you are done.
+If your decks appear, you are set up correctly.
 
 ---
 
@@ -219,8 +219,12 @@ If decks appear in **your** account, you are done.
 | Problem | Fix |
 |---------|-----|
 | Server never starts | Fully quit the client (not just close the window) and reopen |
-| `spawn node ENOENT` / `npx` not found | Install Node 20+ and ensure it is on PATH; on macOS GUI apps may need full path e.g. `/opt/homebrew/bin/node` |
-| Invalid JSON / server ignored | Trailing commas break the whole `mcpServers` file — validate JSON |
+| `spawn node ENOENT` / `npx` not found | Install Node 20+ and ensure it is on PATH; on macOS GUI apps may need the full path, e.g. `/opt/homebrew/bin/node` |
+| Invalid JSON / server ignored | Trailing commas in the JSON break the whole `mcpServers` file. Validate it. |
 | stdio tools say not authenticated | Call `auth_login` once |
-| HTTP media upload fails with `file_path` | Hosted HTTP has no local disk — use `content_base64`, or switch to stdio |
+| HTTP media upload fails with `file_path` | Hosted HTTP has no local disk. Use `content_base64`, or switch to stdio. |
 | OAuth / login page fails on stdio | Add `localhost` under Firebase Authentication → Authorized domains |
+
+## License
+
+MIT. See [LICENSE](LICENSE).
