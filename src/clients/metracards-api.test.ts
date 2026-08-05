@@ -552,3 +552,323 @@ describe('MetraCardsApiClient.generateAudio', () => {
     }
   });
 });
+
+describe('MetraCardsApiClient.listReviews', () => {
+  it('GETs /reviews with Bearer, card_id, and since', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedUrl = '';
+    let capturedAuth: string | null = null;
+    globalThis.fetch = async (url, init) => {
+      capturedUrl = String(url);
+      capturedAuth = new Headers(init?.headers).get('Authorization');
+      return new Response(JSON.stringify([{ id: 'r1' }]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+    try {
+      const client = new MetraCardsApiClient('http://example.test', {
+        getIdToken: async () => 'tok',
+        clearCache: () => undefined,
+      });
+      const result = await client.listReviews({
+        card_id: '11111111-1111-1111-1111-111111111111',
+        since: '2026-01-01T00:00:00.000Z',
+      });
+      assert.equal(
+        capturedUrl,
+        'http://example.test/reviews?card_id=11111111-1111-1111-1111-111111111111&since=2026-01-01T00%3A00%3A00.000Z',
+      );
+      assert.equal(capturedAuth, 'Bearer tok');
+      assert.deepEqual(result, [{ id: 'r1' }]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe('MetraCardsApiClient.createReview', () => {
+  it('POSTs /reviews with Bearer and body', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedUrl = '';
+    let capturedMethod = '';
+    let capturedBody: string | null = null;
+    globalThis.fetch = async (url, init) => {
+      capturedUrl = String(url);
+      capturedMethod = init?.method ?? 'GET';
+      capturedBody = typeof init?.body === 'string' ? init.body : null;
+      return new Response(JSON.stringify({ id: 'r1' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+    try {
+      const client = new MetraCardsApiClient('http://example.test', {
+        getIdToken: async () => 'tok',
+        clearCache: () => undefined,
+      });
+      const body = {
+        card_id: '11111111-1111-1111-1111-111111111111',
+        response: 'good' as const,
+      };
+      await client.createReview(body);
+      assert.equal(capturedMethod, 'POST');
+      assert.equal(capturedUrl, 'http://example.test/reviews');
+      assert.equal(capturedBody, JSON.stringify(body));
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe('MetraCardsApiClient.createReviewsBatch', () => {
+  it('POSTs /reviews/batch with array body', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedUrl = '';
+    let capturedBody: string | null = null;
+    globalThis.fetch = async (url, init) => {
+      capturedUrl = String(url);
+      capturedBody = typeof init?.body === 'string' ? init.body : null;
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+    try {
+      const client = new MetraCardsApiClient('http://example.test', {
+        getIdToken: async () => 'tok',
+        clearCache: () => undefined,
+      });
+      const items = [
+        {
+          card_id: '11111111-1111-1111-1111-111111111111',
+          response: 'easy' as const,
+        },
+      ];
+      await client.createReviewsBatch(items);
+      assert.equal(capturedUrl, 'http://example.test/reviews/batch');
+      assert.equal(capturedBody, JSON.stringify(items));
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe('MetraCardsApiClient.deleteReviewsBatch', () => {
+  it('POSTs /reviews/batch/delete with ids array', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedUrl = '';
+    let capturedBody: string | null = null;
+    globalThis.fetch = async (url, init) => {
+      capturedUrl = String(url);
+      capturedBody = typeof init?.body === 'string' ? init.body : null;
+      return new Response(JSON.stringify({ successful: [], failed: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+    try {
+      const client = new MetraCardsApiClient('http://example.test', {
+        getIdToken: async () => 'tok',
+        clearCache: () => undefined,
+      });
+      const ids = ['11111111-1111-1111-1111-111111111111'];
+      await client.deleteReviewsBatch(ids);
+      assert.equal(capturedUrl, 'http://example.test/reviews/batch/delete');
+      assert.equal(capturedBody, JSON.stringify(ids));
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe('MetraCardsApiClient.listReviewSchedules', () => {
+  it('GETs /review-schedules with optional since', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+    try {
+      const client = new MetraCardsApiClient('http://example.test', {
+        getIdToken: async () => 'tok',
+        clearCache: () => undefined,
+      });
+      await client.listReviewSchedules('2026-01-01T00:00:00.000Z');
+      assert.equal(
+        capturedUrl,
+        'http://example.test/review-schedules?since=2026-01-01T00%3A00%3A00.000Z',
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe('MetraCardsApiClient.getUsageStats', () => {
+  it('GETs /users/usage-stats with Bearer', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedUrl = '';
+    let capturedAuth: string | null = null;
+    globalThis.fetch = async (url, init) => {
+      capturedUrl = String(url);
+      capturedAuth = new Headers(init?.headers).get('Authorization');
+      return new Response(
+        JSON.stringify({
+          cardsSynchronized: 1,
+          sizeUsedMB: 0.1,
+          cardsLimit: 5000,
+          sizeLimitMB: 100,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    };
+    try {
+      const client = new MetraCardsApiClient('http://example.test', {
+        getIdToken: async () => 'tok',
+        clearCache: () => undefined,
+      });
+      await client.getUsageStats();
+      assert.equal(capturedUrl, 'http://example.test/users/usage-stats');
+      assert.equal(capturedAuth, 'Bearer tok');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe('MetraCardsApiClient.getActivityMap', () => {
+  it('GETs /activity with months query', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return new Response(JSON.stringify({ months: 6 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+    try {
+      const client = new MetraCardsApiClient('http://example.test', {
+        getIdToken: async () => 'tok',
+        clearCache: () => undefined,
+      });
+      await client.getActivityMap(6);
+      assert.equal(capturedUrl, 'http://example.test/activity?months=6');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe('MetraCardsApiClient.createDecksBatch', () => {
+  it('POSTs /decks/batch with array body', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedUrl = '';
+    let capturedBody: string | null = null;
+    globalThis.fetch = async (url, init) => {
+      capturedUrl = String(url);
+      capturedBody = typeof init?.body === 'string' ? init.body : null;
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+    try {
+      const client = new MetraCardsApiClient('http://example.test', {
+        getIdToken: async () => 'tok',
+        clearCache: () => undefined,
+      });
+      const items = [{ name: 'Batch Deck' }];
+      await client.createDecksBatch(items);
+      assert.equal(capturedUrl, 'http://example.test/decks/batch');
+      assert.equal(capturedBody, JSON.stringify(items));
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe('MetraCardsApiClient.deleteDecksBatch', () => {
+  it('POSTs /decks/batch/delete with ids', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+    try {
+      const client = new MetraCardsApiClient('http://example.test', {
+        getIdToken: async () => 'tok',
+        clearCache: () => undefined,
+      });
+      await client.deleteDecksBatch(['11111111-1111-1111-1111-111111111111']);
+      assert.equal(capturedUrl, 'http://example.test/decks/batch/delete');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe('MetraCardsApiClient.createFlashcardsBatch', () => {
+  it('POSTs /flashcards/batch', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+    try {
+      const client = new MetraCardsApiClient('http://example.test', {
+        getIdToken: async () => 'tok',
+        clearCache: () => undefined,
+      });
+      await client.createFlashcardsBatch([
+        {
+          deck_id: '11111111-1111-1111-1111-111111111111',
+          front: 'a',
+          back: 'b',
+        },
+      ]);
+      assert.equal(capturedUrl, 'http://example.test/flashcards/batch');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe('MetraCardsApiClient.deleteFlashcardsBatch', () => {
+  it('POSTs /flashcards/batch/delete', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return new Response(JSON.stringify({ successful: [], failed: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+    try {
+      const client = new MetraCardsApiClient('http://example.test', {
+        getIdToken: async () => 'tok',
+        clearCache: () => undefined,
+      });
+      await client.deleteFlashcardsBatch([
+        '11111111-1111-1111-1111-111111111111',
+      ]);
+      assert.equal(capturedUrl, 'http://example.test/flashcards/batch/delete');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});

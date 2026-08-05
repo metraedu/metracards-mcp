@@ -79,6 +79,28 @@ export type GenerateAudioResult = {
   language: string;
 };
 
+export type ReviewResponse = 'again' | 'hard' | 'good' | 'easy';
+
+export type CreateReviewBody = {
+  id?: string;
+  card_id: string;
+  response: ReviewResponse;
+  reviewed_at?: string;
+};
+
+export type CreateReviewScheduleBody = {
+  id: string;
+  time: string;
+  days_of_week: string | number[];
+  enabled?: boolean;
+};
+
+export type UpdateReviewScheduleBody = {
+  time: string;
+  days_of_week: string | number[];
+  enabled?: boolean;
+};
+
 export type TokenProviderLike = {
   getIdToken(): Promise<string>;
   clearCache(): void;
@@ -376,6 +398,280 @@ export class MetraCardsApiClient {
         : undefined) ??
       input.language;
     return { audioBase64, language };
+  }
+
+  async listReviews(opts?: {
+    card_id?: string;
+    since?: string;
+  }): Promise<unknown> {
+    const params = new URLSearchParams();
+    if (opts?.card_id) {
+      params.set('card_id', opts.card_id);
+    }
+    if (opts?.since) {
+      params.set('since', opts.since);
+    }
+    const query = params.toString();
+    const response = await this.request(
+      `/reviews${query ? `?${query}` : ''}`,
+      { method: 'GET', headers: { Accept: 'application/json' } },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'list reviews');
+  }
+
+  async getReview(id: string): Promise<unknown> {
+    const response = await this.request(
+      `/reviews/${encodeURIComponent(id)}`,
+      { method: 'GET', headers: { Accept: 'application/json' } },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'get review');
+  }
+
+  async createReview(body: CreateReviewBody): Promise<unknown> {
+    const response = await this.request(
+      '/reviews',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'create review');
+  }
+
+  async deleteReview(id: string): Promise<unknown> {
+    const response = await this.request(
+      `/reviews/${encodeURIComponent(id)}`,
+      { method: 'DELETE', headers: { Accept: 'application/json' } },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'delete review');
+  }
+
+  async createReviewsBatch(items: CreateReviewBody[]): Promise<unknown> {
+    const response = await this.request(
+      '/reviews/batch',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(items),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'create reviews batch');
+  }
+
+  async deleteReviewsBatch(ids: string[]): Promise<unknown> {
+    const response = await this.request(
+      '/reviews/batch/delete',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ids),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'delete reviews batch');
+  }
+
+  async listReviewSchedules(since?: string): Promise<unknown> {
+    const query =
+      since !== undefined && since !== ''
+        ? `?since=${encodeURIComponent(since)}`
+        : '';
+    const response = await this.request(
+      `/review-schedules${query}`,
+      { method: 'GET', headers: { Accept: 'application/json' } },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'list review schedules');
+  }
+
+  async getReviewSchedule(id: string): Promise<unknown> {
+    const response = await this.request(
+      `/review-schedules/${encodeURIComponent(id)}`,
+      { method: 'GET', headers: { Accept: 'application/json' } },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'get review schedule');
+  }
+
+  async createReviewSchedule(
+    body: CreateReviewScheduleBody,
+  ): Promise<unknown> {
+    const response = await this.request(
+      '/review-schedules',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'create review schedule');
+  }
+
+  async updateReviewSchedule(
+    id: string,
+    body: UpdateReviewScheduleBody,
+  ): Promise<unknown> {
+    const response = await this.request(
+      `/review-schedules/${encodeURIComponent(id)}`,
+      {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'update review schedule');
+  }
+
+  async deleteReviewSchedule(id: string): Promise<unknown> {
+    const response = await this.request(
+      `/review-schedules/${encodeURIComponent(id)}`,
+      { method: 'DELETE', headers: { Accept: 'application/json' } },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'delete review schedule');
+  }
+
+  async createReviewSchedulesBatch(
+    items: CreateReviewScheduleBody[],
+  ): Promise<unknown> {
+    const response = await this.request(
+      '/review-schedules/batch',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(items),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'create review schedules batch');
+  }
+
+  async deleteReviewSchedulesBatch(ids: string[]): Promise<unknown> {
+    const response = await this.request(
+      '/review-schedules/batch/delete',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ids),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'delete review schedules batch');
+  }
+
+  async getUsageStats(): Promise<unknown> {
+    const response = await this.request(
+      '/users/usage-stats',
+      { method: 'GET', headers: { Accept: 'application/json' } },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'get usage stats');
+  }
+
+  async getActivityMap(months?: number): Promise<unknown> {
+    const query =
+      months !== undefined ? `?months=${encodeURIComponent(String(months))}` : '';
+    const response = await this.request(
+      `/activity${query}`,
+      { method: 'GET', headers: { Accept: 'application/json' } },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'get activity map');
+  }
+
+  async createDecksBatch(items: CreateDeckBody[]): Promise<unknown> {
+    const response = await this.request(
+      '/decks/batch',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(items),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'create decks batch');
+  }
+
+  async deleteDecksBatch(ids: string[]): Promise<unknown> {
+    const response = await this.request(
+      '/decks/batch/delete',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ids),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'delete decks batch');
+  }
+
+  async createFlashcardsBatch(
+    items: CreateFlashcardBody[],
+  ): Promise<unknown> {
+    const response = await this.request(
+      '/flashcards/batch',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(items),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'create flashcards batch');
+  }
+
+  async deleteFlashcardsBatch(ids: string[]): Promise<unknown> {
+    const response = await this.request(
+      '/flashcards/batch/delete',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ids),
+      },
+      { auth: true },
+    );
+    return this.readJsonOrThrow(response, 'delete flashcards batch');
   }
 
   private async readJsonOrThrow(

@@ -43,6 +43,25 @@ You need a MetraCards account (the same Google or Apple login used in the app an
 | `cards_delete` | `DELETE /flashcards/{id}` (auth) |
 | `cards_upload_media` | Presign and S3 PUT from `file_path` or `content_base64` (one or the other, not both). |
 | `cards_generate_audio` | `POST /audio` → upload TTS to S3 |
+| `reviews_list` | `GET /reviews` (auth; optional `card_id`, `since`) |
+| `reviews_get` | `GET /reviews/{id}` (auth) |
+| `reviews_create` | `POST /reviews` (auth) |
+| `reviews_delete` | `DELETE /reviews/{id}` (auth; soft-delete) |
+| `reviews_create_batch` | `POST /reviews/batch` (auth; 1–500) |
+| `reviews_delete_batch` | `POST /reviews/batch/delete` (auth; 1–500 ids) |
+| `schedules_list` | `GET /review-schedules` (auth; optional `since`) |
+| `schedules_get` | `GET /review-schedules/{id}` (auth) |
+| `schedules_create` | `POST /review-schedules` (auth) |
+| `schedules_update` | `PUT /review-schedules/{id}` (auth) |
+| `schedules_delete` | `DELETE /review-schedules/{id}` (auth; soft-delete) |
+| `schedules_create_batch` | `POST /review-schedules/batch` (auth; 1–500) |
+| `schedules_delete_batch` | `POST /review-schedules/batch/delete` (auth; 1–500 ids) |
+| `decks_create_batch` | `POST /decks/batch` (auth; 1–100) |
+| `decks_delete_batch` | `POST /decks/batch/delete` (auth; 1–100 ids; cascade deletes flashcards, review history, and media) |
+| `cards_create_batch` | `POST /flashcards/batch` (auth; 1–500) |
+| `cards_delete_batch` | `POST /flashcards/batch/delete` (auth; 1–500 ids) |
+| `stats_usage` | `GET /users/usage-stats` (auth) |
+| `stats_activity` | `GET /activity` (auth; optional `months` 1–24, default 12) |
 
 Typical flow: authenticate, pick or create a deck, create a card, call `cards_upload_media`, then optionally `cards_generate_audio`.
 
