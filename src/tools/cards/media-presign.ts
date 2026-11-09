@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
 import type { MetraCardsApiClient } from '../../clients/metracards-api.js';
 import { createFlashcardMediaPresign } from '../../media/presign.js';
-import { uuidSchema } from '../schemas.js';
+import { fileExtensionSchema, uuidSchema } from '../schemas.js';
 import { mapToolError, textResult } from '../shared.js';
 import type { CardsToolDeps } from './deps.js';
 
@@ -20,7 +20,7 @@ export function registerCardsMediaPresign(
         flashcard_id: uuidSchema,
         side: z.enum(['front', 'back']),
         kind: z.enum(['audio', 'image']),
-        file_extension: z.string().min(1).optional(),
+        file_extension: fileExtensionSchema,
       }),
     },
     async ({ flashcard_id, side, kind, file_extension }) => {

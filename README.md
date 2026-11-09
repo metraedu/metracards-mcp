@@ -65,7 +65,7 @@ You need a MetraCards account (the same Google or Apple login used in the app an
 | `stats_usage` | `GET /users/usage-stats` (auth) |
 | `stats_activity` | `GET /activity` (auth; optional `months` 1–24, default 12) |
 
-Typical flow: authenticate, pick or create a deck, create a card, call `cards_upload_media`, then optionally `cards_generate_audio`.
+Typical flow: authenticate, pick or create a deck, create a card, call `cards_media_presign` (hosted HTTP) or `cards_upload_media` (stdio), then optionally `cards_generate_audio`.
 
 ---
 

@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 export const uuidSchema = z.uuid();
 
+export const fileExtensionSchema = z.string().regex(/^\.?[A-Za-z0-9]{1,8}$/).optional();
+
 export const colorSchema = z
   .string()
   .regex(/^[0-9A-Fa-f]{8}$/, 'color must be 8 hex chars (ARGB)');
