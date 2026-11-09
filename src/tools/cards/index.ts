@@ -7,6 +7,7 @@ import { registerCardsDeleteBatch } from './delete-batch.js';
 import type { CardsToolDeps } from './deps.js';
 import { registerCardsGenerateAudio } from './generate-audio.js';
 import { registerCardsGet } from './get.js';
+import { registerCardsMediaPresign } from './media-presign.js';
 import { registerCardsList } from './list.js';
 import { registerCardsUpdate } from './update.js';
 import { registerCardsUploadMedia } from './upload-media.js';
@@ -25,6 +26,7 @@ export function registerCardsTools(
   registerCardsDelete(server, client);
   registerCardsCreateBatch(server, client);
   registerCardsDeleteBatch(server, client);
+  registerCardsMediaPresign(server, client, deps);
   registerCardsUploadMedia(server, client, deps);
   registerCardsGenerateAudio(server, client, deps);
 }

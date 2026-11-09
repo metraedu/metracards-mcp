@@ -37,7 +37,7 @@ export function registerCardsUploadMedia(
     'cards_upload_media',
     {
       description:
-        'Upload image/audio to MetraCards media storage (file_path XOR content_base64) and attach it to the flashcard',
+        'Upload image/audio to MetraCards media storage (file_path XOR content_base64) and attach it to the flashcard. On hosted HTTP there is no local disk: prefer cards_media_presign instead of sending content_base64.',
       inputSchema: uploadMediaInputSchema,
     },
     async (input) => {
