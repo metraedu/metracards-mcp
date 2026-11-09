@@ -5,7 +5,7 @@ import {
   type MediaKind,
   type MediaSide,
   type PresignClient,
-} from './upload.ts';
+} from './upload.js';
 
 const DEFAULT_EXTENSION: Record<MediaKind, string> = {
   audio: 'mp3',
