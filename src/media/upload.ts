@@ -79,6 +79,17 @@ export function buildFlashcardMediaKey(input: {
   return `users/${input.uid}/flashcards/${input.flashcardId}/${input.side}-${input.kind}-${ts}.${ext}`;
 }
 
+export function mediaFieldNames(
+  side: MediaSide,
+  kind: MediaKind,
+): { urlField: string; sizeField: string } {
+  const prefix = side === 'back' ? 'back_' : '';
+  return {
+    urlField: `${prefix}${kind}_file_url`,
+    sizeField: `${prefix}${kind}_file_size`,
+  };
+}
+
 export async function uploadMediaBuffer(input: {
   client: PresignClient;
   uid: string;

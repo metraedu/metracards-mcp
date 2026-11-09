@@ -3,6 +3,7 @@ import {
   assertMediaByteLength,
   decodeContentBase64,
   guessContentType,
+  mediaFieldNames,
   uploadMediaBuffer,
   type MediaKind,
 } from '../../media/upload.js';
@@ -47,9 +48,7 @@ export function attachMediaToFlashcard(
     size: number;
   },
 ): Promise<unknown> {
-  const prefix = input.side === 'back' ? 'back_' : '';
-  const urlField = `${prefix}${input.kind}_file_url`;
-  const sizeField = `${prefix}${input.kind}_file_size`;
+  const { urlField, sizeField } = mediaFieldNames(input.side, input.kind);
   return client.updateFlashcard(input.flashcardId, {
     [urlField]: input.key,
     [sizeField]: input.size,

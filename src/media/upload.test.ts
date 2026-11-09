@@ -7,6 +7,7 @@ import {
   assertMediaByteLength,
   buildFlashcardMediaKey,
   decodeContentBase64,
+  mediaFieldNames,
   MediaUploadError,
   uploadMediaBuffer,
   uploadMediaFile,
@@ -119,5 +120,29 @@ describe('uploadMediaFile', () => {
 
     assert.equal(result.size, 4);
     assert.match(result.key, /^users\/uid1\/flashcards\/c1\/back-image-/);
+  });
+});
+
+describe('mediaFieldNames', () => {
+  it('maps front sides to unprefixed flashcard fields', () => {
+    assert.deepEqual(mediaFieldNames('front', 'audio'), {
+      urlField: 'audio_file_url',
+      sizeField: 'audio_file_size',
+    });
+    assert.deepEqual(mediaFieldNames('front', 'image'), {
+      urlField: 'image_file_url',
+      sizeField: 'image_file_size',
+    });
+  });
+
+  it('maps back sides to back_ prefixed flashcard fields', () => {
+    assert.deepEqual(mediaFieldNames('back', 'audio'), {
+      urlField: 'back_audio_file_url',
+      sizeField: 'back_audio_file_size',
+    });
+    assert.deepEqual(mediaFieldNames('back', 'image'), {
+      urlField: 'back_image_file_url',
+      sizeField: 'back_image_file_size',
+    });
   });
 });
