@@ -1,6 +1,6 @@
-import { AuthRequiredError } from '../auth/token-provider.js';
-import { MetraCardsApiError } from '../clients/metracards-api.js';
-import { MediaUploadError } from '../media/upload.js';
+import { AuthRequiredError } from '../auth/token-provider.ts';
+import { MetraCardsApiError } from '../clients/metracards-api.ts';
+import { MediaUploadError } from '../media/upload.ts';
 
 export function textResult(payload: unknown, isError = false) {
   return {

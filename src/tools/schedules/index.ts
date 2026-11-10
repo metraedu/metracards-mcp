@@ -1,12 +1,12 @@
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { MetraCardsApiClient } from '../../clients/metracards-api.js';
-import { registerSchedulesCreate } from './create.js';
-import { registerSchedulesCreateBatch } from './create-batch.js';
-import { registerSchedulesDelete } from './delete.js';
-import { registerSchedulesDeleteBatch } from './delete-batch.js';
-import { registerSchedulesGet } from './get.js';
-import { registerSchedulesList } from './list.js';
-import { registerSchedulesUpdate } from './update.js';
+import type { MetraCardsApiClient } from '../../clients/metracards-api.ts';
+import { registerSchedulesCreate } from './create.ts';
+import { registerSchedulesCreateBatch } from './create-batch.ts';
+import { registerSchedulesDelete } from './delete.ts';
+import { registerSchedulesDeleteBatch } from './delete-batch.ts';
+import { registerSchedulesGet } from './get.ts';
+import { registerSchedulesList } from './list.ts';
+import { registerSchedulesUpdate } from './update.ts';
 
 export function registerSchedulesTools(
   server: McpServer,

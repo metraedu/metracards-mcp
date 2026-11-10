@@ -3,7 +3,7 @@ import * as z from 'zod/v4';
 import {
   MetraCardsApiClient,
   MetraCardsApiError,
-} from '../clients/metracards-api.js';
+} from '../clients/metracards-api.ts';
 
 export function registerHealthCheck(
   server: McpServer,

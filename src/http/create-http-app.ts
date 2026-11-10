@@ -16,20 +16,20 @@ import {
 import {
   FirebaseJwtError,
   verifyFirebaseIdToken,
-} from '../auth/firebase-jwt.js';
-import { BearerTokenProvider } from '../auth/bearer-token-provider.js';
-import { CredentialStore } from '../auth/credential-store.js';
-import { MetraCardsApiClient } from '../clients/metracards-api.js';
-import type { AppConfig } from '../config/index.js';
-import { createAuthorizeRouter } from '../oauth/authorize.js';
-import { createDcrRouter } from '../oauth/dcr.js';
+} from '../auth/firebase-jwt.ts';
+import { BearerTokenProvider } from '../auth/bearer-token-provider.ts';
+import { CredentialStore } from '../auth/credential-store.ts';
+import { MetraCardsApiClient } from '../clients/metracards-api.ts';
+import type { AppConfig } from '../config/index.ts';
+import { createAuthorizeRouter } from '../oauth/authorize.ts';
+import { createDcrRouter } from '../oauth/dcr.ts';
 import {
   buildAuthorizationServerMetadata,
   buildProtectedResourceMetadata,
-} from '../oauth/metadata.js';
-import type { OAuthStore } from '../oauth/store.js';
-import { createTokenHandler } from '../oauth/token.js';
-import { createServer } from '../server/create-server.js';
+} from '../oauth/metadata.ts';
+import type { OAuthStore } from '../oauth/store.ts';
+import { createTokenHandler } from '../oauth/token.ts';
+import { createServer } from '../server/create-server.ts';
 
 export type CreateHttpAppDeps = {
   config: AppConfig;

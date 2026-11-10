@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import { runBrowserLogin } from '../../auth/browser-login.js';
-import type { AuthProvider } from '../../auth/types.js';
-import { MetraCardsApiError } from '../../clients/metracards-api.js';
-import { textResult } from '../shared.js';
-import type { AuthToolDeps } from './deps.js';
+import { runBrowserLogin } from '../../auth/browser-login.ts';
+import type { AuthProvider } from '../../auth/types.ts';
+import { MetraCardsApiError } from '../../clients/metracards-api.ts';
+import { textResult } from '../shared.ts';
+import type { AuthToolDeps } from './deps.ts';
 
 export function registerAuthLogin(
   server: McpServer,

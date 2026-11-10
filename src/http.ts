@@ -2,9 +2,9 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { config } from './config/index.js';
-import { createHttpApp } from './http/create-http-app.js';
-import { createOAuthStoreFromEnv } from './oauth/create-store.js';
+import { config } from './config/index.ts';
+import { createHttpApp } from './http/create-http-app.ts';
+import { createOAuthStoreFromEnv } from './oauth/create-store.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const loginPageHtml = readFileSync(

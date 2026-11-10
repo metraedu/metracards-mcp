@@ -1,4 +1,4 @@
-import type { TokenProfile, TokenProvider } from './token-provider.js';
+import type { TokenProfile, TokenProvider } from './token-provider.ts';
 
 export type BearerTokenProviderOptions = {
   uid: string;

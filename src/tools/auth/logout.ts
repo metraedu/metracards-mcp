@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import { textResult } from '../shared.js';
-import type { AuthToolDeps } from './deps.js';
+import { textResult } from '../shared.ts';
+import type { AuthToolDeps } from './deps.ts';
 
 export function registerAuthLogout(
   server: McpServer,

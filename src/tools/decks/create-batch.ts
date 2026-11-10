@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { MetraCardsApiClient } from '../../clients/metracards-api.js';
-import { deckCreateItemSchema } from '../schemas.js';
-import { mapToolError, textResult } from '../shared.js';
+import type { MetraCardsApiClient } from '../../clients/metracards-api.ts';
+import { deckCreateItemSchema } from '../schemas.ts';
+import { mapToolError, textResult } from '../shared.ts';
 
 export function registerDecksCreateBatch(
   server: McpServer,

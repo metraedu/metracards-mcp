@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import { AuthRequiredError } from '../../auth/token-provider.js';
-import { textResult } from '../shared.js';
-import type { AuthToolDeps } from './deps.js';
+import { AuthRequiredError } from '../../auth/token-provider.ts';
+import { textResult } from '../shared.ts';
+import type { AuthToolDeps } from './deps.ts';
 
 export function registerAuthStatus(
   server: McpServer,

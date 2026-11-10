@@ -1,6 +1,6 @@
-import type { CredentialStore } from './credential-store.js';
-import type { StoredCredentials } from './types.js';
-import type { TokenProfile, TokenProvider } from './token-provider.js';
+import type { CredentialStore } from './credential-store.ts';
+import type { StoredCredentials } from './types.ts';
+import type { TokenProfile, TokenProvider } from './token-provider.ts';
 
 export class AuthRequiredError extends Error {
   constructor(

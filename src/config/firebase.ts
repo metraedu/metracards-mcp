@@ -1,4 +1,4 @@
-import type { FirebaseConfig } from '../auth/types.js';
+import type { FirebaseConfig } from '../auth/types.ts';
 
 /** MetraCards Firebase web config (public client values; same as metracards-web). */
 export const METRACARDS_FIREBASE: FirebaseConfig = {

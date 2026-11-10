@@ -8,7 +8,7 @@ import type {
   AuthProvider,
   BrowserLoginResult,
   FirebaseConfig,
-} from './types.js';
+} from './types.ts';
 
 const LOGIN_TIMEOUT_MS = 120_000;
 
