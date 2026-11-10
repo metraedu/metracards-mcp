@@ -2,8 +2,8 @@ import { config as loadDotenv } from 'dotenv';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { FirebaseConfig } from '../auth/types.js';
-import { METRACARDS_FIREBASE } from './firebase.js';
+import type { FirebaseConfig } from '../auth/types.ts';
+import { METRACARDS_FIREBASE } from './firebase.ts';
 
 const packageRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -26,7 +26,6 @@ export type AppConfig = {
   credentialsPath: string;
   firebase: FirebaseConfig;
   http: HttpConfig;
-  maxMediaBytes: number;
 };
 
 export function defaultCredentialsPath(): string {
@@ -89,19 +88,11 @@ export function loadConfig(): AppConfig {
   const credentialsPath =
     process.env.METRACARDS_MCP_CREDENTIALS_PATH?.trim() ||
     defaultCredentialsPath();
-  const maxMediaBytes = Number(
-    process.env.METRACARDS_MCP_MAX_MEDIA_BYTES?.trim() || '10485760',
-  );
-
   return {
     apiUrl: apiUrl.replace(/\/$/, ''),
     credentialsPath,
     firebase: METRACARDS_FIREBASE,
     http: readHttpConfig(),
-    maxMediaBytes:
-      Number.isFinite(maxMediaBytes) && maxMediaBytes > 0
-        ? maxMediaBytes
-        : 10_485_760,
   };
 }
 

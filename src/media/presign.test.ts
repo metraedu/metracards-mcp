@@ -94,6 +94,18 @@ describe('createFlashcardMediaPresign', () => {
     assert.match(result.instructions, /curl/);
     assert.match(result.instructions, /cards_update/);
     assert.match(result.instructions, /audio_file_size/);
+    assert.match(
+      result.instructions,
+      /without reading or inspecting its contents/i,
+    );
+    assert.match(
+      result.instructions,
+      /unless the user explicitly requested content analysis/i,
+    );
+    assert.match(
+      result.instructions,
+      /must not be logged, displayed, repeated, or shared/i,
+    );
   });
 
   it('propagates presign failures', async () => {

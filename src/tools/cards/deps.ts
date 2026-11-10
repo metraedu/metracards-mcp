@@ -1,6 +1,5 @@
-import type { TokenProvider } from '../../auth/token-provider.js';
+import type { TokenProvider } from '../../auth/token-provider.ts';
 
 export type CardsToolDeps = {
   tokenProvider: TokenProvider;
-  maxMediaBytes: number;
 };

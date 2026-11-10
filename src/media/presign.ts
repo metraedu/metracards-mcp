@@ -57,11 +57,11 @@ export async function createFlashcardMediaPresign(input: {
     url_field: urlField,
     size_field: sizeField,
     instructions: [
-      `1. Upload the file yourself, without sending its bytes to the model:`,
+      '1. Upload the file directly from disk without reading or inspecting its contents, unless the user explicitly requested content analysis:',
       `   curl --fail --upload-file <absolute_path> -H "Content-Type: ${contentType}" "<url>"`,
-      `2. Read the file size in bytes (stat -f%z <absolute_path> on macOS, stat -c%s on Linux).`,
+      '2. Read only the file size in bytes (stat -f%z <absolute_path> on macOS, stat -c%s on Linux).',
       `3. Call cards_update with { id: "${input.flashcardId}", ${urlField}: "${key}", ${sizeField}: <bytes> }.`,
-      `The upload URL expires in ${expiresIn}s and must not be logged or shared.`,
+      `The upload URL expires in ${expiresIn}s and must not be logged, displayed, repeated, or shared.`,
     ].join('\n'),
   };
 }
