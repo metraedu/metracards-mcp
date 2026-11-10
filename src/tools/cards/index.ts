@@ -1,18 +1,18 @@
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { MetraCardsApiClient } from '../../clients/metracards-api.js';
-import { registerCardsCreate } from './create.js';
-import { registerCardsCreateBatch } from './create-batch.js';
-import { registerCardsDelete } from './delete.js';
-import { registerCardsDeleteBatch } from './delete-batch.js';
-import type { CardsToolDeps } from './deps.js';
-import { registerCardsGenerateAudio } from './generate-audio.js';
-import { registerCardsGet } from './get.js';
-import { registerCardsList } from './list.js';
-import { registerCardsMediaPresign } from './media-presign.js';
-import { registerCardsUpdate } from './update.js';
-import { registerCardsUploadMedia } from './upload-media.js';
+import type { MetraCardsApiClient } from '../../clients/metracards-api.ts';
+import { registerCardsCreate } from './create.ts';
+import { registerCardsCreateBatch } from './create-batch.ts';
+import { registerCardsDelete } from './delete.ts';
+import { registerCardsDeleteBatch } from './delete-batch.ts';
+import type { CardsToolDeps } from './deps.ts';
+import { registerCardsGenerateAudio } from './generate-audio.ts';
+import { registerCardsGet } from './get.ts';
+import { registerCardsList } from './list.ts';
+import { registerCardsMediaPresign } from './media-presign.ts';
+import { registerCardsUpdate } from './update.ts';
+import { registerCardsUploadMedia } from './upload-media.ts';
 
-export type { CardsToolDeps } from './deps.js';
+export type { CardsToolDeps } from './deps.ts';
 
 export function registerCardsTools(
   server: McpServer,

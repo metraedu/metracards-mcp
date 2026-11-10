@@ -1,6 +1,6 @@
 import { mkdir, readFile, unlink, writeFile, chmod } from 'node:fs/promises';
 import path from 'node:path';
-import type { AuthProvider, StoredCredentials } from './types.js';
+import type { AuthProvider, StoredCredentials } from './types.ts';
 
 function isAuthProvider(value: unknown): value is AuthProvider {
   return value === 'google' || value === 'apple';

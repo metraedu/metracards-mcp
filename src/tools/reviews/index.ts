@@ -1,11 +1,11 @@
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { MetraCardsApiClient } from '../../clients/metracards-api.js';
-import { registerReviewsCreate } from './create.js';
-import { registerReviewsCreateBatch } from './create-batch.js';
-import { registerReviewsDelete } from './delete.js';
-import { registerReviewsDeleteBatch } from './delete-batch.js';
-import { registerReviewsGet } from './get.js';
-import { registerReviewsList } from './list.js';
+import type { MetraCardsApiClient } from '../../clients/metracards-api.ts';
+import { registerReviewsCreate } from './create.ts';
+import { registerReviewsCreateBatch } from './create-batch.ts';
+import { registerReviewsDelete } from './delete.ts';
+import { registerReviewsDeleteBatch } from './delete-batch.ts';
+import { registerReviewsGet } from './get.ts';
+import { registerReviewsList } from './list.ts';
 
 export function registerReviewsTools(
   server: McpServer,

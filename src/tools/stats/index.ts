@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { MetraCardsApiClient } from '../../clients/metracards-api.js';
-import { registerStatsActivity } from './activity.js';
-import { registerStatsUsage } from './usage.js';
+import type { MetraCardsApiClient } from '../../clients/metracards-api.ts';
+import { registerStatsActivity } from './activity.ts';
+import { registerStatsUsage } from './usage.ts';
 
 export function registerStatsTools(
   server: McpServer,

@@ -4,36 +4,11 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
-  assertMediaByteLength,
   buildFlashcardMediaKey,
-  decodeContentBase64,
   mediaFieldNames,
-  MediaUploadError,
   uploadMediaBuffer,
   uploadMediaFile,
 } from './upload.ts';
-
-describe('decodeContentBase64', () => {
-  it('decodes raw base64', () => {
-    assert.deepEqual(decodeContentBase64('YWJj'), Buffer.from('abc'));
-  });
-
-  it('strips data URL prefix', () => {
-    assert.deepEqual(
-      decodeContentBase64('data:image/png;base64,YWJj'),
-      Buffer.from('abc'),
-    );
-  });
-});
-
-describe('assertMediaByteLength', () => {
-  it('rejects oversize buffers', () => {
-    assert.throws(
-      () => assertMediaByteLength(Buffer.from('abcd'), 3),
-      MediaUploadError,
-    );
-  });
-});
 
 describe('buildFlashcardMediaKey', () => {
   it('uses users/{uid}/flashcards/{id}/{side}-{kind}-{ts}.{ext}', () => {

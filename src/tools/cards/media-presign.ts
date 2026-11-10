@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { MetraCardsApiClient } from '../../clients/metracards-api.js';
-import { createFlashcardMediaPresign } from '../../media/presign.js';
-import { fileExtensionSchema, uuidSchema } from '../schemas.js';
-import { mapToolError, textResult } from '../shared.js';
-import type { CardsToolDeps } from './deps.js';
+import type { MetraCardsApiClient } from '../../clients/metracards-api.ts';
+import { createFlashcardMediaPresign } from '../../media/presign.ts';
+import { fileExtensionSchema, uuidSchema } from '../schemas.ts';
+import { mapToolError, textResult } from '../shared.ts';
+import type { CardsToolDeps } from './deps.ts';
 
 export function registerCardsMediaPresign(
   server: McpServer,
@@ -15,7 +15,7 @@ export function registerCardsMediaPresign(
     'cards_media_presign',
     {
       description:
-        'Get a presigned PUT URL to upload flashcard media from the caller machine, without sending base64 through the context. Upload the file with curl, then attach it with cards_update using the returned url_field/size_field. Preferred over cards_upload_media on hosted HTTP.',
+        'Required media upload flow for hosted HTTP clients. Get a presigned PUT URL, upload directly from caller disk without reading or sending media bytes through model context, then attach the returned key and local byte size with cards_update. Never log, display, repeat, or disclose the URL.',
       inputSchema: z.object({
         flashcard_id: uuidSchema,
         side: z.enum(['front', 'back']),

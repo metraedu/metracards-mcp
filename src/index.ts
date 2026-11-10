@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
-import { CredentialStore } from './auth/credential-store.js';
-import { RefreshingTokenProvider } from './auth/refreshing-token-provider.js';
-import { MetraCardsApiClient } from './clients/metracards-api.js';
-import { config } from './config/index.js';
-import { createServer } from './server/create-server.js';
+import { CredentialStore } from './auth/credential-store.ts';
+import { RefreshingTokenProvider } from './auth/refreshing-token-provider.ts';
+import { MetraCardsApiClient } from './clients/metracards-api.ts';
+import { config } from './config/index.ts';
+import { createServer } from './server/create-server.ts';
 
 console.error(`metracards-mcp listening on stdio (API: ${config.apiUrl})`);
 

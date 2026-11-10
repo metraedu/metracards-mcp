@@ -1,4 +1,4 @@
-import type { AuthProvider } from './types.js';
+import type { AuthProvider } from './types.ts';
 
 export type TokenProfile = {
   uid: string;
@@ -17,4 +17,4 @@ export type TokenProvider = {
   seedCache?(idToken: string, expiresInSec?: number): void;
 };
 
-export { AuthRequiredError } from './refreshing-token-provider.js';
+export { AuthRequiredError } from './refreshing-token-provider.ts';

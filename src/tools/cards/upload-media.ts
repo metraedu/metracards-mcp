@@ -1,32 +1,20 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { MetraCardsApiClient } from '../../clients/metracards-api.js';
-import { uploadMediaFile as uploadFromPath } from '../../media/upload.js';
-import { uuidSchema } from '../schemas.js';
-import { mapToolError, textResult } from '../shared.js';
-import type { CardsToolDeps } from './deps.js';
-import { attachMediaToFlashcard, uploadFromBase64 } from './media.js';
+import type { MetraCardsApiClient } from '../../clients/metracards-api.ts';
+import { uploadMediaFile as uploadFromPath } from '../../media/upload.ts';
+import { uuidSchema } from '../schemas.ts';
+import { mapToolError, textResult } from '../shared.ts';
+import type { CardsToolDeps } from './deps.ts';
+import { attachMediaToFlashcard } from './media.ts';
 
 const uploadMediaInputSchema = z
   .object({
     flashcard_id: uuidSchema,
     side: z.enum(['front', 'back']),
     kind: z.enum(['audio', 'image']),
-    file_path: z.string().min(1).optional(),
-    content_base64: z.string().min(1).optional(),
-    content_type: z.string().min(1).optional(),
-    file_extension: z.string().min(1).optional(),
+    file_path: z.string().min(1),
   })
-  .superRefine((value, ctx) => {
-    const hasPath = Boolean(value.file_path);
-    const hasBase64 = Boolean(value.content_base64);
-    if (hasPath === hasBase64) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Provide exactly one of file_path or content_base64',
-      });
-    }
-  });
+  .strict();
 
 export function registerCardsUploadMedia(
   server: McpServer,
@@ -37,33 +25,21 @@ export function registerCardsUploadMedia(
     'cards_upload_media',
     {
       description:
-        'Upload image/audio to MetraCards media storage (file_path XOR content_base64) and attach it to the flashcard. On hosted HTTP there is no local disk: prefer cards_media_presign instead of sending content_base64.',
+        'Upload image/audio from an absolute file_path accessible to this local/stdio server and attach it to the flashcard. Hosted HTTP clients must use cards_media_presign instead.',
       inputSchema: uploadMediaInputSchema,
     },
     async (input) => {
       try {
         const uid = await deps.tokenProvider.getUid();
-        const { flashcard_id, side, kind } = input;
-        const uploaded = input.file_path
-          ? await uploadFromPath({
-              client,
-              uid,
-              flashcardId: flashcard_id,
-              side,
-              kind,
-              filePath: input.file_path,
-            })
-          : await uploadFromBase64({
-              client,
-              uid,
-              flashcardId: flashcard_id,
-              side,
-              kind,
-              contentBase64: input.content_base64!,
-              contentType: input.content_type,
-              fileExtension: input.file_extension,
-              maxMediaBytes: deps.maxMediaBytes,
-            });
+        const { flashcard_id, side, kind, file_path } = input;
+        const uploaded = await uploadFromPath({
+          client,
+          uid,
+          flashcardId: flashcard_id,
+          side,
+          kind,
+          filePath: file_path,
+        });
         const updated = await attachMediaToFlashcard(client, {
           flashcardId: flashcard_id,
           side,

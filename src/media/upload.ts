@@ -22,27 +22,6 @@ export class MediaUploadError extends Error {
   }
 }
 
-export function decodeContentBase64(value: string): Buffer {
-  const trimmed = value.trim();
-  const comma = trimmed.indexOf(',');
-  const raw =
-    trimmed.startsWith('data:') && comma >= 0
-      ? trimmed.slice(comma + 1)
-      : trimmed;
-  return Buffer.from(raw, 'base64');
-}
-
-export function assertMediaByteLength(
-  buffer: Buffer,
-  maxBytes: number,
-): void {
-  if (buffer.byteLength > maxBytes) {
-    throw new MediaUploadError(
-      `Decoded media exceeds max size of ${maxBytes} bytes (got ${buffer.byteLength})`,
-    );
-  }
-}
-
 export function guessContentType(kind: MediaKind, extension: string): string {
   const ext = extension.toLowerCase();
   if (kind === 'image') {

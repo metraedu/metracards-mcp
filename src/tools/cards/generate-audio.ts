@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { MetraCardsApiClient } from '../../clients/metracards-api.js';
-import { uploadMediaBuffer } from '../../media/upload.js';
-import { uuidSchema } from '../schemas.js';
-import { mapToolError, textResult } from '../shared.js';
-import type { CardsToolDeps } from './deps.js';
-import { attachMediaToFlashcard } from './media.js';
+import type { MetraCardsApiClient } from '../../clients/metracards-api.ts';
+import { uploadMediaBuffer } from '../../media/upload.ts';
+import { uuidSchema } from '../schemas.ts';
+import { mapToolError, textResult } from '../shared.ts';
+import type { CardsToolDeps } from './deps.ts';
+import { attachMediaToFlashcard } from './media.ts';
 
 export function registerCardsGenerateAudio(
   server: McpServer,

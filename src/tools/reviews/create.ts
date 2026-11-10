@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/server';
-import type { MetraCardsApiClient } from '../../clients/metracards-api.js';
-import { reviewCreateItemSchema } from '../schemas.js';
-import { mapToolError, textResult } from '../shared.js';
+import type { MetraCardsApiClient } from '../../clients/metracards-api.ts';
+import { reviewCreateItemSchema } from '../schemas.ts';
+import { mapToolError, textResult } from '../shared.ts';
 
 export function registerReviewsCreate(
   server: McpServer,

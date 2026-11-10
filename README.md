@@ -19,10 +19,10 @@ You need a MetraCards account (the same Google or Apple login used in the app an
 
 | | Remote HTTP | Local stdio |
 |---|---|---|
-| When | Default for most clients | Local image/audio uploads without a presign round-trip |
+| When | Default for most clients | Local image/audio uploads from a path this server can read |
 | Connect | `https://mcp.metraedu.com.br/mcp` | Run `dist/index.js` on your machine |
 | Auth | Browser OAuth / Connect | Call the `auth_login` tool once |
-| Media | `cards_media_presign` + `curl` + `cards_update` (`content_base64` as fallback) | Prefer absolute `file_path` |
+| Media | `cards_media_presign` + direct PUT + `cards_update` (required) | `cards_upload_media` with an absolute `file_path` |
 
 ## Tools
 
@@ -42,8 +42,8 @@ You need a MetraCards account (the same Google or Apple login used in the app an
 | `cards_create` | `POST /flashcards` (auth) |
 | `cards_update` | `PUT /flashcards/{id}` (auth) |
 | `cards_delete` | `DELETE /flashcards/{id}` (auth) |
-| `cards_media_presign` | `POST /s3/presigned-url` (auth). Returns a presigned PUT URL plus the flashcard fields to set, so the file never becomes base64 in the context. |
-| `cards_upload_media` | Presign and S3 PUT from `file_path` or `content_base64` (one or the other, not both). |
+| `cards_media_presign` | `POST /s3/presigned-url` (auth). Required flow on hosted HTTP: returns a presigned PUT URL plus the flashcard fields to set, so media bytes never pass through the context. |
+| `cards_upload_media` | Local/stdio only: reads an absolute `file_path` this server can access, PUTs it, and attaches it to the flashcard. |
 | `cards_generate_audio` | `POST /audio` → upload TTS to S3 |
 | `reviews_list` | `GET /reviews` (auth; optional `card_id`, `since`) |
 | `reviews_get` | `GET /reviews/{id}` (auth) |
@@ -153,25 +153,30 @@ Or Settings → MCP → add the same URL. Complete OAuth when Cursor prompts.
 
 ## Upload media without base64
 
-On hosted HTTP the server has no access to your disk, and sending a file as
-`content_base64` costs a lot of context (a 1 MB file is roughly 350k tokens).
-Use the presign flow instead — the bytes go straight from your machine to S3:
+On hosted HTTP the server has no access to your disk, and media bytes are not
+accepted as tool arguments. The presign flow is required — the bytes go straight
+from your machine to S3 and never enter the context:
+
+Unless the user explicitly asks for content analysis, do not read, inspect,
+decode, transcribe, or convert the media to base64. Use only the path,
+extension, MIME type, and byte size.
 
 ```bash
 # 1. cards_media_presign { flashcard_id, side: "front", kind: "audio", file_extension: "mp3" }
-# 2. upload the file yourself
-curl --fail --upload-file clip.mp3 -H "Content-Type: audio/mpeg" "<url>"
-# 3. cards_update { id, audio_file_url: "<key>", audio_file_size: <stat -f%z clip.mp3> }
+# 2. upload the file yourself, straight from disk
+curl --fail --upload-file /absolute/path/clip.mp3 -H "Content-Type: audio/mpeg" "<url>"
+# 3. cards_update { id, audio_file_url: "<key>", audio_file_size: <stat -f%z /absolute/path/clip.mp3> }
 ```
 
 The response carries `url_field` and `size_field`, so you do not have to work
-out the `back_` prefix yourself. The URL is short-lived: do not log or share it.
+out the `back_` prefix yourself. The URL is a short-lived credential: never log,
+display, repeat, or share it.
 
 ---
 
 ## Local stdio
 
-Use this when agents need to upload files from disk via `file_path`, which avoids sending large base64 strings in the context.
+Use this when agents need to upload files from disk with `cards_upload_media`, which requires an absolute `file_path` this server process can read. No media bytes are sent through the context.
 
 ### Requirements
 
