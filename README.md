@@ -9,6 +9,7 @@ You need a MetraCards account (the same Google or Apple login used in the app an
 - [Choose a mode](#choose-a-mode)
 - [Tools](#tools)
 - [Remote HTTP](#remote-http)
+- [Upload media without base64](#upload-media-without-base64)
 - [Local stdio](#local-stdio)
 - [Check that it works](#check-that-it-works)
 - [Troubleshooting](#troubleshooting)
@@ -18,10 +19,10 @@ You need a MetraCards account (the same Google or Apple login used in the app an
 
 | | Remote HTTP | Local stdio |
 |---|---|---|
-| When | Default for most clients | Local image/audio uploads without base64 |
+| When | Default for most clients | Local image/audio uploads without a presign round-trip |
 | Connect | `https://mcp.metraedu.com.br/mcp` | Run `dist/index.js` on your machine |
 | Auth | Browser OAuth / Connect | Call the `auth_login` tool once |
-| Media | `content_base64` only | Prefer absolute `file_path` |
+| Media | `cards_media_presign` + `curl` + `cards_update` (`content_base64` as fallback) | Prefer absolute `file_path` |
 
 ## Tools
 
@@ -41,6 +42,7 @@ You need a MetraCards account (the same Google or Apple login used in the app an
 | `cards_create` | `POST /flashcards` (auth) |
 | `cards_update` | `PUT /flashcards/{id}` (auth) |
 | `cards_delete` | `DELETE /flashcards/{id}` (auth) |
+| `cards_media_presign` | `POST /s3/presigned-url` (auth). Returns a presigned PUT URL plus the flashcard fields to set, so the file never becomes base64 in the context. |
 | `cards_upload_media` | Presign and S3 PUT from `file_path` or `content_base64` (one or the other, not both). |
 | `cards_generate_audio` | `POST /audio` → upload TTS to S3 |
 | `reviews_list` | `GET /reviews` (auth; optional `card_id`, `since`) |
@@ -63,7 +65,7 @@ You need a MetraCards account (the same Google or Apple login used in the app an
 | `stats_usage` | `GET /users/usage-stats` (auth) |
 | `stats_activity` | `GET /activity` (auth; optional `months` 1–24, default 12) |
 
-Typical flow: authenticate, pick or create a deck, create a card, call `cards_upload_media`, then optionally `cards_generate_audio`.
+Typical flow: authenticate, pick or create a deck, create a card, call `cards_media_presign` (hosted HTTP) or `cards_upload_media` (stdio), then optionally `cards_generate_audio`.
 
 ---
 
@@ -146,6 +148,24 @@ Or Settings → MCP → add the same URL. Complete OAuth when Cursor prompts.
 3. MCP URL: `https://mcp.metraedu.com.br/mcp`
 4. Authentication: OAuth
 5. Sign in to MetraCards, then enable the connector in a chat
+
+---
+
+## Upload media without base64
+
+On hosted HTTP the server has no access to your disk, and sending a file as
+`content_base64` costs a lot of context (a 1 MB file is roughly 350k tokens).
+Use the presign flow instead — the bytes go straight from your machine to S3:
+
+```bash
+# 1. cards_media_presign { flashcard_id, side: "front", kind: "audio", file_extension: "mp3" }
+# 2. upload the file yourself
+curl --fail --upload-file clip.mp3 -H "Content-Type: audio/mpeg" "<url>"
+# 3. cards_update { id, audio_file_url: "<key>", audio_file_size: <stat -f%z clip.mp3> }
+```
+
+The response carries `url_field` and `size_field`, so you do not have to work
+out the `back_` prefix yourself. The URL is short-lived: do not log or share it.
 
 ---
 
@@ -241,7 +261,7 @@ If your decks appear, you are set up correctly.
 | `spawn node ENOENT` / `npx` not found | Install Node 20+ and ensure it is on PATH; on macOS GUI apps may need the full path, e.g. `/opt/homebrew/bin/node` |
 | Invalid JSON / server ignored | Trailing commas in the JSON break the whole `mcpServers` file. Validate it. |
 | stdio tools say not authenticated | Call `auth_login` once |
-| HTTP media upload fails with `file_path` | Hosted HTTP has no local disk. Use `content_base64`, or switch to stdio. |
+| HTTP media upload fails with `file_path` | Hosted HTTP has no local disk. Use `cards_media_presign` (see [Upload media without base64](#upload-media-without-base64)), or switch to stdio. |
 | OAuth / login page fails on stdio | Add `localhost` under Firebase Authentication → Authorized domains |
 
 ## License
