@@ -20,7 +20,7 @@ You need a MetraCards account (the same Google or Apple login used in the app an
 | | Remote HTTP | Local stdio |
 |---|---|---|
 | When | Default for most clients | Local image/audio uploads without a presign round-trip |
-| Connect | `https://mcp.metraedu.com.br/mcp` | Run `dist/index.js` on your machine |
+| Connect | `https://mcp.metracards.com/mcp` | Run `dist/index.js` on your machine |
 | Auth | Browser OAuth / Connect | Call the `auth_login` tool once |
 | Media | `cards_media_presign` + `curl` + `cards_update` (`content_base64` as fallback) | Prefer absolute `file_path` |
 
@@ -71,7 +71,7 @@ Typical flow: authenticate, pick or create a deck, create a card, call `cards_me
 
 ## Remote HTTP
 
-URL: `https://mcp.metraedu.com.br/mcp`
+URL: `https://mcp.metracards.com/mcp`
 
 No local build required. Sign in with MetraCards in the browser when the client asks.
 
@@ -90,7 +90,7 @@ Settings → Developer → Edit Config (`claude_desktop_config.json`):
       "args": [
         "-y",
         "mcp-remote",
-        "https://mcp.metraedu.com.br/mcp",
+        "https://mcp.metracards.com/mcp",
         "--transport",
         "http-only"
       ]
@@ -104,7 +104,7 @@ Requires Node.js. Fully quit Claude Desktop and reopen. Closing the window alone
 ### Claude Desktop (Connectors UI)
 
 1. Customize → Connectors → Add custom connector
-2. URL: `https://mcp.metraedu.com.br/mcp`
+2. URL: `https://mcp.metracards.com/mcp`
 3. Connect → sign in to MetraCards
 4. In a chat: + → Connectors → enable MetraCards
 
@@ -113,7 +113,7 @@ No Client ID or Secret required. Most free plans allow one custom connector.
 ### Claude Code
 
 ```bash
-claude mcp add --transport http metracards https://mcp.metraedu.com.br/mcp
+claude mcp add --transport http metracards https://mcp.metracards.com/mcp
 ```
 
 Then `/mcp` in Claude Code and finish browser login if prompted.
@@ -122,7 +122,7 @@ Project scope (writes `.mcp.json`):
 
 ```bash
 claude mcp add --transport http metracards --scope project \
-  https://mcp.metraedu.com.br/mcp
+  https://mcp.metracards.com/mcp
 ```
 
 ### Cursor (HTTP)
@@ -133,7 +133,7 @@ claude mcp add --transport http metracards --scope project \
 {
   "mcpServers": {
     "metracards": {
-      "url": "https://mcp.metraedu.com.br/mcp"
+      "url": "https://mcp.metracards.com/mcp"
     }
   }
 }
@@ -145,7 +145,7 @@ Or Settings → MCP → add the same URL. Complete OAuth when Cursor prompts.
 
 1. Enable Developer mode (Settings → Apps & Connectors → Advanced, or similar)
 2. Create connector / app
-3. MCP URL: `https://mcp.metraedu.com.br/mcp`
+3. MCP URL: `https://mcp.metracards.com/mcp`
 4. Authentication: OAuth
 5. Sign in to MetraCards, then enable the connector in a chat
 
